@@ -36,6 +36,7 @@ function dropWhen(s: GameState, ok: (d: number) => boolean, maxTicks = 120 * 30)
   return dropped;
 }
 
+const CLEAR = { weather: 'clear' as const };
 const perfect = (s: GameState) => expect(dropWhen(s, (d) => Math.abs(d) < 1)).toBe(true);
 const events = (s: GameState) => s.events.splice(0);
 
@@ -57,7 +58,7 @@ describe('math', () => {
 
 describe('fizik', () => {
   it('sarkaç enerjiyi korur, genlik sabit kalır', () => {
-    const s = createGame(1, 'normal');
+    const s = createGame(1, 'normal', CLEAR);
     const theta0 = Math.abs(s.theta);
     let max = 0;
     for (let i = 0; i < 120 * 20; i++) {
@@ -68,7 +69,7 @@ describe('fizik', () => {
   });
 
   it('ip uzadıkça sarkaç yavaşlar (periyot ~ 2π√(L/g))', () => {
-    const s = createGame(2, 'normal');
+    const s = createGame(2, 'normal', CLEAR);
     // ilk kat: ip uzun
     const L = s.rope;
     let crossings = 0;
@@ -87,7 +88,7 @@ describe('fizik', () => {
   });
 
   it('bırakılan kat salınım momentumunu korur', () => {
-    const s = createGame(3, 'normal');
+    const s = createGame(3, 'normal', CLEAR);
     // en hızlı an: dibe yakın
     while (Math.abs(s.theta) > 0.02) step(s);
     const vx = s.cur!.vx;
@@ -99,7 +100,7 @@ describe('fizik', () => {
   });
 
   it('kusursuz bırakışlar düz bir kule ve kombo yapar', () => {
-    const s = createGame(4, 'normal');
+    const s = createGame(4, 'normal', CLEAR);
     for (let i = 0; i < 12; i++) perfect(s);
     expect(s.blocks.length).toBe(12);
     expect(s.combo).toBe(12);
@@ -109,7 +110,7 @@ describe('fizik', () => {
   });
 
   it('ağırlık merkezi kenarı aşan kat devrilir ve hak götürür', () => {
-    const s = createGame(5, 'hard');
+    const s = createGame(5, 'hard', CLEAR);
     perfect(s);
     perfect(s);
     events(s);
@@ -125,7 +126,7 @@ describe('fizik', () => {
   });
 
   it('merdiven gibi kayan kule, ağırlık merkezi desteği aşınca devrilir', () => {
-    const s = createGame(6, 'hard');
+    const s = createGame(6, 'hard', CLEAR);
     perfect(s);
     events(s);
     let toppled: Extract<GameEvent, { type: 'topple' }> | undefined;
@@ -144,7 +145,7 @@ describe('fizik', () => {
   });
 
   it('ıska oyunu durdurur, alınan hak kaldığı yerden sürdürür', () => {
-    const s = createGame(7, 'hard');
+    const s = createGame(7, 'hard', CLEAR);
     perfect(s);
     perfect(s);
     expect(dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2)).toBe(true);
@@ -159,7 +160,7 @@ describe('fizik', () => {
   });
 
   it('devam hakkı sınırlı', () => {
-    const s = createGame(9, 'hard');
+    const s = createGame(9, 'hard', CLEAR);
     perfect(s);
     for (let c = 0; c <= MAX_CONTINUES; c++) {
       for (let g = 0; g < 5 && s.phase !== 'over'; g++) dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2);
@@ -170,8 +171,28 @@ describe('fizik', () => {
     expect(continueRun(s)).toBe(false);
   });
 
+  it('rüzgâr düşen katı esme yönüne iter', () => {
+    const clear = createGame(12, 'normal', CLEAR);
+    const windy = createGame(12, 'normal', { weather: 'windy' });
+    // ikisinde de aynı anda bırak
+    for (let i = 0; i < 90; i++) {
+      step(clear);
+      step(windy);
+    }
+    drop(clear);
+    drop(windy);
+    // iniş ~40 adım sürer, ondan önce bak
+    for (let i = 0; i < 20; i++) {
+      step(clear);
+      step(windy);
+    }
+    expect(windy.phase).toBe('dropping');
+    const dx = windy.cur!.x - clear.cur!.x;
+    expect(Math.sign(dx)).toBe(windy.windDir);
+  });
+
   it('salınımda değilken bırakma yok sayılır', () => {
-    const s = createGame(5, 'easy');
+    const s = createGame(5, 'easy', CLEAR);
     expect(drop(s)).toBe(true);
     expect(drop(s)).toBe(false);
     expect(s.inputs.length).toBe(1);
@@ -202,6 +223,19 @@ describe('replay', () => {
       expect(verify(rec)).toBe(true);
       expect(simulate(rec.seed, rec.difficulty, rec.inputs).score).toBe(s.score);
     }
+  });
+
+  it('her hava olayında (fırtına dahil) kayıt aynı skoru verir', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed < 400 && seen.size < 4; seed++) {
+      const g = createGame(seed, 'hard');
+      if (seen.has(g.weather)) continue;
+      seen.add(g.weather);
+      const s = playRandom(seed);
+      expect(s.weather).toBe(g.weather);
+      expect(verify(toRecord(s))).toBe(true);
+    }
+    expect(seen.size).toBe(4);
   });
 
   it('oynanmış skor reddedilir', () => {
