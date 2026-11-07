@@ -259,4 +259,4 @@ npm test
 
 ## Lisans
 
-[MIT](LICENSE)
+Tüm hakları saklıdır. Kod yalnızca incelenmek üzere yayımlanmıştır; izin olmadan kullanılamaz, kopyalanamaz ya da yayımlanamaz. Ayrıntılar: [LICENSE](LICENSE)
