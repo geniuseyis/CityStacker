@@ -5,11 +5,11 @@ export type SfxName = 'drop' | 'place' | 'perfect' | 'crash' | 'click';
 type Player = ReturnType<typeof createAudioPlayer>;
 
 const sources: Record<SfxName, number> = {
-  drop: require('../assets/sfx/drop.wav'),
-  place: require('../assets/sfx/place.wav'),
-  perfect: require('../assets/sfx/perfect.wav'),
-  crash: require('../assets/sfx/crash.wav'),
-  click: require('../assets/sfx/click.wav'),
+  drop: require('../../assets/sfx/drop.wav'),
+  place: require('../../assets/sfx/place.wav'),
+  perfect: require('../../assets/sfx/perfect.wav'),
+  crash: require('../../assets/sfx/crash.wav'),
+  click: require('../../assets/sfx/click.wav'),
 };
 
 const players: Partial<Record<SfxName, Player>> = {};
@@ -68,7 +68,7 @@ export async function initSound() {
     }
   });
   try {
-    musicPlayer = createAudioPlayer(require('../assets/music/bgm.wav'));
+    musicPlayer = createAudioPlayer(require('../../assets/music/bgm.wav'));
     musicPlayer.loop = true;
     musicPlayer.volume = 0.45;
   } catch {
