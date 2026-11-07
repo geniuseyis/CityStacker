@@ -534,22 +534,19 @@ export default function Play() {
                     tapFeedback();
                     share();
                   }}
-                  style={[styles.square, { flex: 1, flexDirection: 'row', gap: space.sm }]}
+                  style={styles.square}
                 >
                   {sharing ? (
                     <ActivityIndicator color={color.text} />
                   ) : (
-                    <>
-                      <Ionicons name="share-social-outline" size={20} color={color.text} />
-                      <T v="heading">{t('share')}</T>
-                    </>
+                    <Ionicons name="share-social-outline" size={22} color={color.text} />
                   )}
                 </Pressable>
                 <Button
                   title={t('playAgain')}
                   icon="reload"
                   onPress={restart}
-                  style={{ flex: 1.3, backgroundColor: theme.accent, paddingHorizontal: space.md }}
+                  style={{ flex: 1, backgroundColor: theme.accent, paddingHorizontal: space.md }}
                 />
               </View>
             </Glass>

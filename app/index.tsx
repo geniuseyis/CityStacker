@@ -191,7 +191,7 @@ function ModeCard({
       ]}
     >
       <View style={[styles.modeIcon, active && { backgroundColor: accent }]}>{icon}</View>
-      <T v="heading" numberOfLines={1} style={{ fontSize: 15 }}>
+      <T v="heading" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 15 }}>
         {title}
       </T>
       <T v="caption" muted numberOfLines={2} style={{ fontSize: 11, lineHeight: 15 }}>

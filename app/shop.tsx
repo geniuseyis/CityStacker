@@ -502,8 +502,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
-  cell: { flexBasis: '47%', flexGrow: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: space.md },
+  cell: { width: '48.4%' },
   pack: {
     alignItems: 'center',
     paddingTop: space.xl + 10,
