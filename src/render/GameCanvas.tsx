@@ -27,6 +27,8 @@ type Props = {
   reducedMotion?: boolean;
   // ana menüdeki vitrin modu: oyunu kendi oynar
   demo?: boolean;
+  // vitrin döngüsü: kule bitince ya da 16 kata gelince baştan (sadece ana menü)
+  loop?: boolean;
   // sahne ekranın bu oranına sığdırılır (ana menü: üst kısım)
   fit?: number;
   fitTop?: number;
@@ -52,6 +54,7 @@ export function GameCanvas({
   paused,
   reducedMotion,
   demo,
+  loop = demo,
   fit = 1,
   fitTop = 0,
   guide,
@@ -64,8 +67,8 @@ export function GameCanvas({
   const scene = useRef<Scene | null>(null);
   if (!scene.current) scene.current = new Scene(theme);
 
-  const live = useRef({ paused, onEvents, onGhostFloors, width, height, demo, fit, fitTop, guide, ghost });
-  live.current = { paused, onEvents, onGhostFloors, width, height, demo, fit, fitTop, guide, ghost };
+  const live = useRef({ paused, onEvents, onGhostFloors, width, height, demo, loop, fit, fitTop, guide, ghost });
+  live.current = { paused, onEvents, onGhostFloors, width, height, demo, loop, fit, fitTop, guide, ghost };
 
   useEffect(() => {
     scene.current!.setTheme(theme);
@@ -132,8 +135,9 @@ export function GameCanvas({
         L.onEvents?.(evs);
       }
 
-      if (L.demo && (s.phase === 'over' || s.blocks.length >= 16)) {
-        game.current = createGame((Math.random() * 1e9) | 0, 'normal');
+      if (L.loop && (s.phase === 'over' || s.blocks.length >= 16)) {
+        // vitrin hep açık havada, menü okunaklı kalsın
+        game.current = createGame((Math.random() * 1e9) | 0, 'normal', { weather: 'clear' });
         scene.current!.reset();
       }
 
