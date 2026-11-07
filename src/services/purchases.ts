@@ -4,7 +4,7 @@ import { addTokens, grantStarter, setPro } from '@/state/store';
 
 // Ürün kataloğu. Kimlikler App Store Connect / Play Console'da aynı adla açılacak.
 // Gerçek fiyat mağazadan kullanıcının para birimiyle gelir; buradakiler mağaza
-// yüklenemezse gösterilen yedek. Türkiye'ye yerel, daha düşük fiyat (docs/monetization.md).
+// yüklenemezse gösterilen yedek. Türkiye'ye yerel, daha düşük fiyat.
 
 type Price = { usd: string; try: string };
 

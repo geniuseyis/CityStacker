@@ -26,7 +26,7 @@ iOS ve Android için modern bir kule oyunu.
 ![Platform](https://img.shields.io/badge/platform-iOS%20·%20Android-71717A?style=flat-square)
 ![Diller](https://img.shields.io/badge/diller-TR%20·%20EN-71717A?style=flat-square)
 
-**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Fizik](#fizik)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Başlarken](#başlarken)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
+**[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Fizik](#fizik)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Gizlilik](#güvenlik-ve-gizlilik)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
 
 </div>
 
@@ -181,8 +181,6 @@ Bedava ek hak yok: her kayıpta jetonla hak alınır. Jetonlar satın alınır y
 | Başlangıç paketi | $1.99 | ₺49,99 |
 | Pro haftalık / aylık / ömür boyu | $1.99 / $4.99 / $14.99 | ₺49,99 / ₺119,99 / ₺349,99 |
 
-Ürün kimlikleri ve mağaza kurulumu: [docs/monetization.md](docs/monetization.md). Satın alma ve reklam katmanı hesaplar bağlanana kadar yalnızca geliştirme sürümünde taklit edilir; yayın sürümünde hiçbir şey bedava verilmez.
-
 <br>
 
 ## Güvenlik ve gizlilik
@@ -198,49 +196,9 @@ Gizlilik politikası: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 <br>
 
-## Başlarken
-
-Skia ve MMKV native modül olduğu için Expo Go yerine development build gerekir.
-
-```bash
-npm install
-npx expo run:android      # ya da run:ios (macOS)
-npm test                  # motor testleri
-npm run typecheck
-```
-
-> **Windows notu:** Proje yolu uzunsa Android C++ derlemesi (react-native-worklets) dosya yolu sınırına takılabilir. Depoyu kısa bir yola (ör. `C:\pl`) klonlayıp oradan derleyin.
-
-<details>
-<summary><b>Varlıkları yeniden üretmek</b></summary>
-<br>
-
-```bash
-node scripts/gen-sfx.js       # ses efektleri
-node scripts/gen-music.js     # dikişsiz döngü müzik
-node scripts/gen-icon.js      # ikon, adaptive katmanlar, açılış
-node scripts/readme-art.js    # README kapak ve kartları
-```
-
-Geliştirme sürümünde ekran görüntüsü modu: `plumbline://play?mode=endless&auto=1&weather=storm` vitrin botunu oyunda oynatır.
-
-</details>
-
-Mağaza derlemesi:
-
-```bash
-npx eas build --platform all --profile production
-```
-
-<br>
-
 ## Test
 
-```bash
-npm test
-```
-
-17 test: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kule bölümünün yıkılması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
+Motorun 17 testi: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kule bölümünün yıkılması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
 
 <br>
 
@@ -250,7 +208,7 @@ npm test
 - [x] Hava olayları, hayalet modu, Günün Kulesi
 - [x] Günlük seri, görevler, kozmetik mağaza, paylaşım kartı
 - [x] Hak satın alma, jeton paketleri, Plumbline Pro arayüzü
-- [ ] RevenueCat ile gerçek satın alma ve sunucu tarafı makbuz doğrulama
+- [ ] Mağaza satın almaları (RevenueCat)
 - [ ] AdMob (ödüllü + geçiş), UMP onayı ve iOS ATT
 - [ ] iOS cihaz testi, mağaza görselleri, gizlilik politikasının yayınlanması
 - [ ] v1.1: Game Center / Play Games liderlik tabloları (skorlar replay ile doğrulanır)
