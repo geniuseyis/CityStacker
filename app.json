@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "CityStacker",
+    "name": "Plumbline",
     "slug": "CityStacker",
-    "scheme": "citystacker",
+    "scheme": "plumbline",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0F1A",
     "ios": {
-      "bundleIdentifier": "com.citystacker.app",
+      "bundleIdentifier": "com.seyitbol.plumbline",
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
@@ -17,7 +17,7 @@
       }
     },
     "android": {
-      "package": "com.citystacker.app",
+      "package": "com.seyitbol.plumbline",
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#0B0F1A",
