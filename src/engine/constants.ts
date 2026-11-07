@@ -1,4 +1,4 @@
-import type { Difficulty } from './types';
+import type { Difficulty, Weather } from './types';
 
 // Motor sanal bir ekranda çalışır, renderer bunu cihaza ölçekler.
 // Böylece telefon/tablet farkı oynanışı değiştirmez.
@@ -54,6 +54,16 @@ export const DIFFICULTY: Record<Difficulty, { swing: number; wind: number; tol: 
   normal: { swing: 1.0, wind: 1.0, tol: 1.0 },
   hard: { swing: 1.25, wind: 1.6, tol: 0.75 },
 };
+
+// Hava olayları. push: kata etki eden yan rüzgâr ivmesi (birim/sn²),
+// wind: kule salınımı çarpanı, windFrom: rüzgârın hissedilmeye başladığı kat
+export const WEATHER: Record<Weather, { push: number; wind: number; windFrom: number; gusts: boolean; score: number }> =
+  {
+    clear: { push: 0, wind: 1, windFrom: 5, gusts: false, score: 1 },
+    windy: { push: 26, wind: 2.2, windFrom: 2, gusts: false, score: 1.2 },
+    storm: { push: 34, wind: 2.8, windFrom: 1, gusts: true, score: 1.5 },
+    fog: { push: 0, wind: 1, windFrom: 5, gusts: false, score: 1.15 },
+  };
 
 export const SCORE = {
   perfectBase: 100,

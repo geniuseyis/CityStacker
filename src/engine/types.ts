@@ -1,5 +1,7 @@
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
+export type Weather = 'clear' | 'windy' | 'storm' | 'fog';
+
 // swinging: vinçte | dropping: serbest düşüş | falling: ıska, ekrandan düşüyor
 // settling: devrilen bölüm yıkılırken kısa bekleme | over: bitti
 export type Phase = 'swinging' | 'dropping' | 'falling' | 'settling' | 'over';
@@ -56,6 +58,12 @@ export type GameState = {
   theta: number;
   omega: number;
   side: 1 | -1;
+
+  // hava: yan rüzgâr yönü, fırtınada ani esinti (birim/sn²) ve bir sonrakine kalan süre
+  weather: Weather;
+  windDir: 1 | -1;
+  gust: number;
+  gustT: number;
 
   // kule esnekliği: tepe noktasının yer değiştirmesi
   wob: number;
