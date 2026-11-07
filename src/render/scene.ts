@@ -14,10 +14,13 @@ import {
   PIVOT_Y,
   VIEW_H,
   VIEW_W,
+  DIFFICULTY,
+  PERFECT_TOL,
   blockViewX,
   leanAt,
   levelTop,
   nextRandom,
+  predictOffset,
   ropeEnd,
   type GameEvent,
   type GameState,
@@ -110,6 +113,7 @@ export class Scene {
 
   private p = paint();
   private stroke = paint();
+  private dash = Skia.PathEffect.MakeDash([6, 5], 0);
   private fxRng = { rng: 0x5eed };
 
   constructor(theme: SkyTheme) {
@@ -226,31 +230,37 @@ export class Scene {
   private buildClouds(): SkPicture {
     const rng = { rng: 99 };
     const r = () => nextRandom(rng);
-    const tint = this.theme.key === 'neon' ? '#B26BFF' : '#FFFFFF';
-    // dünya yüksekliği (yerden yukarı) — bulut kuşakları
+    // ufuk rengine yakın, ince yatay bulut şeritleri (stratus). Yuvarlak top
+    // bulutlar bu gökyüzünde leke gibi duruyordu.
+    const tint = mix(this.theme.skyLow[1], '#FFFFFF', 0.45);
     return record(
       VIEW_W + SPAN * 2,
       4000,
       (c) => {
         const p = paint();
-        for (let i = 0; i < 14; i++) {
-          const cx = -120 + r() * (VIEW_W + 240);
-          const cy = 3800 - (500 + i * 230 + r() * 120);
-          const n = 3 + Math.floor(r() * 3);
+        for (let i = 0; i < 12; i++) {
+          const cx = -140 + r() * (VIEW_W + 280);
+          // dünya yüksekliği: yerden 700 ile 3500 arası
+          const cy = 3800 - (700 + i * 240 + r() * 120);
+          const n = 2 + Math.floor(r() * 2);
           for (let k = 0; k < n; k++) {
-            const px = cx + (k - n / 2) * (26 + r() * 14);
-            const py = cy + (r() - 0.5) * 14;
-            const rad = 28 + r() * 26;
+            const px = cx + (r() - 0.5) * 90;
+            const py = cy + k * 7;
+            const len = 90 + r() * 120;
             p.setShader(
               Skia.Shader.MakeRadialGradient(
-                vec(px, py),
-                rad,
-                [C(alpha(tint, 0.09)), C(alpha(tint, 0))],
+                vec(0, 0),
+                1,
+                [C(alpha(tint, 0.13)), C(alpha(tint, 0))],
                 null,
                 TileMode.Clamp
               )
             );
-            c.drawCircle(px, py, rad, p);
+            c.save();
+            c.translate(px, py);
+            c.scale(len, 5 + r() * 5);
+            c.drawCircle(0, 0, 1, p);
+            c.restore();
           }
         }
       },
@@ -462,7 +472,15 @@ export class Scene {
 
   // ekran boyutu (px) verilir, sahne bir SkPicture olarak döner.
   // fitHeight: sahnenin sığdırılacağı yükseklik (ana menüde ekranın üst kısmı)
-  render(s: GameState, dt: number, width: number, height: number, fitHeight = height, fitTop = 0): SkPicture {
+  render(
+    s: GameState,
+    dt: number,
+    width: number,
+    height: number,
+    fitHeight = height,
+    fitTop = 0,
+    guide = false
+  ): SkPicture {
     this.time += dt;
     this.step(dt, s);
 
@@ -574,6 +592,7 @@ export class Scene {
       c.restore();
     }
 
+    if (guide) this.drawGuide(c, s);
     this.drawDebris(c);
     this.drawCrane(c, s);
 
@@ -718,6 +737,30 @@ export class Scene {
       }
       this.debris = this.debris.filter((d) => d.fall < 1600);
     }
+  }
+
+  // nişan yardımı: şimdi bırakılsa katın ineceği yer, kesik çizgili hayalet kat
+  private drawGuide(c: SkCanvas, s: GameState) {
+    const d = predictOffset(s);
+    if (d === null) return;
+    const n = s.blocks.length;
+    const cx = n ? blockViewX(s, n - 1) + d : s.camX + VIEW_W / 2 + d;
+    const y = GROUND_Y - (n + 1) * BLOCK + s.camY;
+    const a = Math.abs(d);
+    const tol = DIFFICULTY[s.difficulty].tol;
+    const col = n === 0 || a <= PERFECT_TOL * tol ? '#7CF3D4' : a <= BLOCK / 2 ? '#FFFFFF' : '#FF5D6C';
+    const st = this.stroke;
+    st.setColor(C(col));
+    st.setAlphaf(0.75);
+    st.setStrokeWidth(1.6);
+    st.setPathEffect(this.dash);
+    c.drawRRect(Skia.RRectXY(R(cx - BLOCK / 2, y, BLOCK, BLOCK), 3, 3), st);
+    st.setPathEffect(null);
+    this.p.setColor(C(col));
+    this.p.setAlphaf(0.1);
+    c.drawRect(R(cx - BLOCK / 2, y, BLOCK, BLOCK), this.p);
+    this.p.setAlphaf(1);
+    st.setAlphaf(1);
   }
 
   private drawDebris(c: SkCanvas) {

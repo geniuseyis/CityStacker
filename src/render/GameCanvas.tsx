@@ -16,6 +16,8 @@ type Props = {
   // sahne ekranın bu oranına sığdırılır (ana menü: üst kısım)
   fit?: number;
   fitTop?: number;
+  // nişan yardımı: tahmini iniş noktasını çiz
+  guide?: boolean;
   onEvents?: (events: GameEvent[]) => void;
 };
 
@@ -25,14 +27,14 @@ const empty = (() => {
   return r.finishRecordingAsPicture();
 })();
 
-export function GameCanvas({ game, theme, paused, reducedMotion, demo, fit = 1, fitTop = 0, onEvents }: Props) {
+export function GameCanvas({ game, theme, paused, reducedMotion, demo, fit = 1, fitTop = 0, guide, onEvents }: Props) {
   const { width, height } = useWindowDimensions();
   const picture = useSharedValue<SkPicture>(empty);
   const scene = useRef<Scene | null>(null);
   if (!scene.current) scene.current = new Scene(theme);
 
-  const live = useRef({ paused, onEvents, width, height, demo, fit, fitTop });
-  live.current = { paused, onEvents, width, height, demo, fit, fitTop };
+  const live = useRef({ paused, onEvents, width, height, demo, fit, fitTop, guide });
+  live.current = { paused, onEvents, width, height, demo, fit, fitTop, guide };
 
   useEffect(() => {
     scene.current!.setTheme(theme);
@@ -86,7 +88,8 @@ export function GameCanvas({ game, theme, paused, reducedMotion, demo, fit = 1, 
         L.width,
         L.height,
         L.height * L.fit - L.fitTop,
-        L.fitTop
+        L.fitTop,
+        !!L.guide
       );
     };
 
