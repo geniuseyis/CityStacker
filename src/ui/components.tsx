@@ -221,7 +221,8 @@ export function Toggle({ value, onChange, label }: { value: boolean; onChange: (
     x.value = withTiming(value ? 1 : 0, { duration: 180 });
   }, [value, x]);
   const knob = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * 20 }] }));
-  const track = useAnimatedStyle(() => ({ opacity: 0.35 + x.value * 0.65 }));
+  // kapalıyken görünür gri iz, açılınca üstüne vurgu rengi solarak gelir
+  const track = useAnimatedStyle(() => ({ opacity: x.value }));
   return (
     <Pressable
       accessibilityRole="switch"
@@ -234,9 +235,8 @@ export function Toggle({ value, onChange, label }: { value: boolean; onChange: (
       hitSlop={8}
       style={styles.toggle}
     >
-      <Animated.View
-        style={[StyleSheet.absoluteFill, styles.toggleOn, track, !value && { backgroundColor: color.surfaceStrong }]}
-      />
+      <View style={[StyleSheet.absoluteFill, styles.toggleOff]} />
+      <Animated.View style={[StyleSheet.absoluteFill, styles.toggleOn, track]} />
       <Animated.View style={[styles.knob, knob]} />
     </Pressable>
   );
@@ -332,6 +332,7 @@ const styles = StyleSheet.create({
   },
   toggle: { width: 48, height: 28, borderRadius: 14, overflow: 'hidden', justifyContent: 'center' },
   toggleOn: { backgroundColor: color.accent, borderRadius: 14 },
+  toggleOff: { backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 14 },
   knob: {
     width: 22,
     height: 22,
