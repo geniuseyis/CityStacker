@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initSound, pauseMusic, setMusicEnabled, setSoundEnabled, startMusic } from '@/services/sound';
 import { getSettings, useSettings } from '@/state/store';
+import { AdHost } from '@/ui/AdHost';
 import { color } from '@/ui/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -86,6 +87,16 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="daily"
+            options={{
+              presentation: 'formSheet',
+              sheetAllowedDetents: [0.92],
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 28,
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
             name="shop"
             options={{
               presentation: 'formSheet',
@@ -97,6 +108,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="pro" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         </Stack>
+        {__DEV__ && <AdHost />}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
