@@ -4,11 +4,15 @@ Vinçte sallanan katı doğru anda bırak, kuleni olabildiğince yükselt. iOS v
 
 ## Oynanış
 
-- Tek dokunuşla bırak. Alttaki kata ne kadar hizalıysa o kadar puan: **Mükemmel / İyi / normal**
-- Üst üste hizalı bırakışlar kombo yapar, kombo arttıkça vinç hızlanır
-- Kaçık katlar kuleyi yamultur, kayma sınırı aşılırsa kule yıkılır
-- 3 hak var, ıskalanan her kat bir hak götürür
-- Jetonla kaldığın yerden devam edebilirsin (oyun başına en fazla 2 kez)
+Fizik kurallarına göre işleyen bir kule oyunu:
+
+- Kat vinçte gerçek bir sarkaç gibi sallanır (θ'' = −g/L·sin θ). Vinç katı her zaman kulenin hemen üstüne indirir, bu yüzden ilk katlarda ip uzun ve salınım yavaştır.
+- Bırakılan kat salınım hızını korur ve parabol çizerek düşer. Doğru anı kollamak gerekir.
+- Kat alttakinin üstüne düz oturur. Ağırlık merkezi alttaki katın kenarını aşarsa kenardan devrilir.
+- Her yerleşimde üstteki bölümün ağırlık merkezi kontrol edilir. Desteği aşan bölüm kenar etrafında dönerek yıkılır.
+- Kule esnek bir kiriş gibi davranır: kaçık iniş onu sallar, yükseldikçe rüzgâr etkisi artar. Tam oturan katlar sallantıyı azaltır.
+- 3 hak var. Iska, devrilme ya da yıkılma bir hak götürür. Jetonla kaldığın yerden devam edebilirsin (oyun başına en fazla 2 kez).
+- İstersen nişan yardımı katın ineceği yeri gösterir (Günün Kulesi'nde kapalı).
 
 ### Modlar
 
