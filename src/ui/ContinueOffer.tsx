@@ -12,6 +12,7 @@ import Animated, {
 import type { OverReason } from '@/engine';
 import { useT } from '@/i18n';
 import { Button, Coin, Glass, Press, T } from './components';
+import { useArmed } from './useArmed';
 import { color, font, radius, space } from './tokens';
 
 const SECONDS = 8;
@@ -38,6 +39,7 @@ type Props = {
 // vazgeçilirse sonuç ekranına geçilir.
 export function ContinueOffer(p: Props) {
   const t = useT();
+  const armed = useArmed(600);
   const [left, setLeft] = useState(SECONDS);
   const bar = useSharedValue(1);
   const enough = p.tokens >= p.cost;
@@ -82,7 +84,7 @@ export function ContinueOffer(p: Props) {
           <Button
             title={t('continueFree')}
             icon="sparkles"
-            onPress={p.onFree}
+            onPress={armed(p.onFree)}
             style={{ backgroundColor: p.accent }}
             right={<ProTag />}
           />
@@ -90,7 +92,7 @@ export function ContinueOffer(p: Props) {
           <Button
             title={t('buyLife')}
             icon="heart"
-            onPress={p.onBuy}
+            onPress={armed(p.onBuy)}
             style={{ backgroundColor: p.accent }}
             right={
               <View style={styles.cost}>
@@ -102,15 +104,20 @@ export function ContinueOffer(p: Props) {
             }
           />
         ) : (
-          <Button title={t('getTokens')} icon="add-circle" onPress={p.onShop} style={{ backgroundColor: p.accent }} />
+          <Button
+            title={t('getTokens')}
+            icon="add-circle"
+            onPress={armed(p.onShop)}
+            style={{ backgroundColor: p.accent }}
+          />
         )}
 
         {p.ad && !p.free && (
-          <Button title={t('watchAdLife')} kind="secondary" icon="play-circle-outline" onPress={p.onAd} />
+          <Button title={t('watchAdLife')} kind="secondary" icon="play-circle-outline" onPress={armed(p.onAd)} />
         )}
 
         <View style={styles.footer}>
-          <Press label={t('balance')} onPress={p.onShop} style={styles.balance} hitSlop={6}>
+          <Press label={t('balance')} onPress={armed(p.onShop)} style={styles.balance} hitSlop={6}>
             <Coin size={16} />
             <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
               {p.tokens}
@@ -120,7 +127,7 @@ export function ContinueOffer(p: Props) {
           <T v="caption" faint style={{ flex: 1, textAlign: 'center' }} numberOfLines={1}>
             {!p.free && !enough ? t('notEnough', { n: p.cost - p.tokens }) : t('livesLeftRun', { n: p.livesLeft })}
           </T>
-          <Press label={t('giveUp')} onPress={p.onDecline} style={styles.decline} hitSlop={6}>
+          <Press label={t('giveUp')} onPress={armed(p.onDecline)} style={styles.decline} hitSlop={6}>
             <T v="caption" muted style={{ fontFamily: font.semibold }}>
               {t('giveUp')}
             </T>
