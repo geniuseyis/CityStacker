@@ -163,9 +163,50 @@ export function Glass({
   return <View style={[styles.glass, strong && styles.glassStrong, style]}>{children}</View>;
 }
 
-export function Pill({ icon, text, tint }: { icon?: IconName; text: string; tint?: string }) {
+// jeton: iç halkalı küçük altın para
+export function Coin({ size = 16 }: { size?: number }) {
   return (
-    <View style={styles.pill}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color.gold,
+        borderWidth: Math.max(1, size * 0.09),
+        borderColor: '#E39A2D',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.42,
+          height: size * 0.42,
+          borderRadius: size,
+          borderWidth: Math.max(1, size * 0.08),
+          borderColor: 'rgba(120,64,0,0.45)',
+        }}
+      />
+    </View>
+  );
+}
+
+export function Pill({
+  icon,
+  coin,
+  text,
+  tint,
+  label,
+}: {
+  icon?: IconName;
+  coin?: boolean;
+  text: string;
+  tint?: string;
+  label?: string;
+}) {
+  return (
+    <View style={styles.pill} accessible accessibilityLabel={label ?? text}>
+      {coin && <Coin size={16} />}
       {icon && <Ionicons name={icon} size={14} color={tint ?? color.gold} />}
       <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
         {text}
