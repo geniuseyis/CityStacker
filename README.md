@@ -17,7 +17,27 @@ Fizik kurallarına göre işleyen bir kule oyunu:
 ### Modlar
 
 - **Sonsuz:** kolay / normal / zor
-- **Günün Kulesi:** her gün herkes için aynı kule (aynı seed)
+- **Günün Kulesi:** her gün herkes için aynı kule ve aynı hava (aynı seed)
+- **Hayalet:** rekor kulenin kaydı yanında aynı anda yeniden oynanır, onunla yarışırsın
+
+### Hava olayları
+
+Her oyunun havası seed'den gelir ve fiziği etkiler:
+
+| Hava | Etki | Puan |
+| --- | --- | --- |
+| Açık | – | ×1 |
+| Rüzgârlı | sabit yan rüzgâr sarkacı ve düşen katı iter, kule daha çok sallanır | ×1,2 |
+| Fırtına | daha güçlü rüzgâr + ani esintiler, yağmur ve şimşek | ×1,5 |
+| Sisli | görüş azalır | ×1,15 |
+
+### Günlük
+
+- 7 günlük giriş serisi, her gün 3 görev, reklam izleyerek jeton
+- Kat stilleri ve vinç renkleri jetonla açılır
+- Oyun sonunda kule kartı paylaşılabilir (1080×1920)
+
+Gelir modeli ve ürünler: [docs/monetization.md](docs/monetization.md)
 
 ## Teknik
 
