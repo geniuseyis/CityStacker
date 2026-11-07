@@ -1,20 +1,31 @@
 import { isPro } from '@/state/store';
 
 // Reklam arayüzü. AdMob hesabı açılınca react-native-google-mobile-ads buraya
-// bağlanacak (UMP onay formu + iOS'ta ATT ile). Pro kullanıcıya hiç reklam yok.
+// bağlanacak (UMP onay formu + iOS'ta ATT ile). Pro kullanıcıya geçiş reklamı yok;
+// ödüllü reklam isteğe bağlı olduğu için Pro'da da açık.
 
-const INTERSTITIAL_EVERY = 3; // her 3 oyunda bir, oyun sonunda
+const SIMULATE = __DEV__; // geliştirmede sahte reklam ekranı (ui/AdHost)
+const INTERSTITIAL_EVERY = 3;
 let gamesSinceAd = 0;
+
+type Listener = (done: (watched: boolean) => void) => void;
+let host: Listener | null = null;
+
+// AdHost bileşeni kendini buraya kaydeder
+export function registerAdHost(l: Listener | null) {
+  host = l;
+}
 
 export const adsEnabled = () => !isPro();
 
-// reklam izleyerek ücretsiz hak (Pro'da da açık kalabilir, kullanıcı isterse izler)
 export function rewardedReady(): boolean {
-  return false;
+  return SIMULATE && !!host;
 }
 
-export async function showRewarded(): Promise<boolean> {
-  return false;
+// izlenip sonuna kadar gelinirse true
+export function showRewarded(): Promise<boolean> {
+  if (!rewardedReady()) return Promise.resolve(false);
+  return new Promise((resolve) => host!(resolve));
 }
 
 // oyun sonu sayacı; zamanı gelince geçiş reklamı gösterir
