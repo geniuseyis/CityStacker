@@ -1,108 +1,121 @@
-/* Özgün 8-bit/retro ses efektleri üretir (WAV, 16-bit mono).
+/* Ses efektlerini üretir (WAV, 16-bit mono, 44.1 kHz). Hepsi sentez, telif yok.
  * Çalıştır:  node scripts/gen-sfx.js
  */
 const fs = require('fs');
 const path = require('path');
+const { SR, writeWav, lowpass, highpass, reverb, normalize, noise } = require('./audio');
 
-const SR = 44100;
 const OUT = path.join(__dirname, '..', 'assets', 'sfx');
 fs.mkdirSync(OUT, { recursive: true });
 
-function writeWav(name, samples) {
-  const n = samples.length;
-  const buf = Buffer.alloc(44 + n * 2);
-  buf.write('RIFF', 0);
-  buf.writeUInt32LE(36 + n * 2, 4);
-  buf.write('WAVE', 8);
-  buf.write('fmt ', 12);
-  buf.writeUInt32LE(16, 16);
-  buf.writeUInt16LE(1, 20); // PCM
-  buf.writeUInt16LE(1, 22); // mono
-  buf.writeUInt32LE(SR, 24);
-  buf.writeUInt32LE(SR * 2, 28);
-  buf.writeUInt16LE(2, 32);
-  buf.writeUInt16LE(16, 34);
-  buf.write('data', 36);
-  buf.writeUInt32LE(n * 2, 40);
+const len = (s) => Math.floor(SR * s);
+const rnd = noise(7);
+
+// beton/ahşap karışımı tok bir "tak": düşen ton + filtrelenmiş vuruş
+function thud({ f0 = 150, f1 = 70, dur = 0.28, body = 0.9, click = 0.35, bright = 2400 }) {
+  const n = len(dur);
+  const out = new Float64Array(n);
+  let ph = 0;
   for (let i = 0; i < n; i++) {
-    const v = Math.max(-1, Math.min(1, samples[i]));
-    buf.writeInt16LE((v * 32767) | 0, 44 + i * 2);
+    const t = i / SR;
+    const f = f1 + (f0 - f1) * Math.exp(-t * 40);
+    ph += f / SR;
+    out[i] = Math.sin(ph * 2 * Math.PI) * Math.exp(-t * 18) * body;
   }
-  fs.writeFileSync(path.join(OUT, name), buf);
-  console.log('  +', name, `(${(n / SR).toFixed(2)}s)`);
-}
-
-// dalga biçimleri
-const square = (p) => (p % 1 < 0.5 ? 1 : -1);
-const sine = (p) => Math.sin(p * 2 * Math.PI);
-const tri = (p) => {
-  const x = p % 1;
-  return x < 0.5 ? 4 * x - 1 : 3 - 4 * x;
-};
-
-// tek ton üret: freq sabit ya da [bas, son] kayan; env: attack/decay oranlı
-function tone({ dur, freq, wave = square, vol = 0.5, decay = 4 }) {
-  const N = Math.floor(SR * dur);
-  const out = new Array(N);
-  const f0 = Array.isArray(freq) ? freq[0] : freq;
-  const f1 = Array.isArray(freq) ? freq[1] : freq;
-  let phase = 0;
-  for (let i = 0; i < N; i++) {
-    const t = i / N;
-    const f = f0 + (f1 - f0) * t;
-    phase += f / SR;
-    // zarf: hızlı atak + üstel sönüm
-    const attack = Math.min(1, (i / SR) / 0.005);
-    const env = attack * Math.exp(-decay * t);
-    out[i] = wave(phase) * env * vol;
-  }
+  const tr = new Float64Array(n);
+  for (let i = 0; i < len(0.03); i++) tr[i] = rnd() * Math.exp(-(i / SR) * 160) * click;
+  const trf = lowpass(tr, bright);
+  for (let i = 0; i < n; i++) out[i] += trf[i];
   return out;
 }
 
-function mix(...arrs) {
-  const N = Math.max(...arrs.map((a) => a.length));
-  const out = new Array(N).fill(0);
-  for (const a of arrs) for (let i = 0; i < a.length; i++) out[i] += a[i];
+// çan / cam: armonik olmayan kısmi sesler, uzun sönüm
+function chime(freqs, { dur = 1.2, decay = 3.2, vol = 0.5, delayStep = 0 } = {}) {
+  const n = len(dur);
+  const out = new Float64Array(n);
+  freqs.forEach((f, k) => {
+    const start = len(delayStep * k);
+    const partials = [
+      [1, 1],
+      [2.01, 0.35],
+      [3.98, 0.12],
+      [5.43, 0.05],
+    ];
+    for (const [m, a] of partials) {
+      let ph = Math.random();
+      for (let i = start; i < n; i++) {
+        const t = (i - start) / SR;
+        ph += (f * m) / SR;
+        const atk = Math.min(1, t / 0.004);
+        out[i] += Math.sin(ph * 2 * Math.PI) * a * atk * Math.exp(-t * decay * (1 + m * 0.35)) * vol;
+      }
+    }
+  });
   return out;
 }
 
-function concat(...arrs) {
-  return [].concat(...arrs);
-}
-
-function silence(dur) {
-  return new Array(Math.floor(SR * dur)).fill(0);
+function add(a, b, gain = 1, offset = 0) {
+  const n = Math.max(a.length, b.length + offset);
+  const out = new Float64Array(n);
+  out.set(a);
+  for (let i = 0; i < b.length; i++) out[i + offset] += b[i] * gain;
+  return out;
 }
 
 console.log('Ses efektleri üretiliyor →', OUT);
 
-// 1) DROP — bloğu bırakma: kısa aşağı doğru chirp
-writeWav('drop.wav', tone({ dur: 0.12, freq: [600, 240], wave: square, vol: 0.4, decay: 6 }));
-
-// 2) PLACE — normal yerleşme: tek tatmin edici blip
-writeWav('place.wav', tone({ dur: 0.1, freq: [330, 440], wave: tri, vol: 0.5, decay: 7 }));
-
-// 3) PERFECT — mükemmel: yükselen üç notalı arpej
-writeWav(
-  'perfect.wav',
-  concat(
-    tone({ dur: 0.07, freq: 660, wave: square, vol: 0.4, decay: 5 }),
-    tone({ dur: 0.07, freq: 880, wave: square, vol: 0.4, decay: 5 }),
-    tone({ dur: 0.14, freq: 1320, wave: square, vol: 0.45, decay: 4 })
-  )
-);
-
-// 4) CRASH — yıkılış: gürültülü, alçalan bas + parazit
+// DROP — halat bırakıldı: kısa hava sesi + ince metal tık
 (() => {
-  const base = tone({ dur: 0.5, freq: [220, 60], wave: square, vol: 0.45, decay: 3 });
-  for (let i = 0; i < base.length; i++) {
-    const t = i / base.length;
-    base[i] += (Math.random() * 2 - 1) * 0.35 * Math.exp(-2.5 * t); // patlama gürültüsü
+  const n = len(0.22);
+  const w = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    w[i] = rnd() * Math.sin(Math.PI * t) * 0.5;
   }
-  writeWav('crash.wav', base);
+  let s = highpass(lowpass(w, 2200), 500);
+  const tick = chime([2600], { dur: 0.12, decay: 40, vol: 0.18 });
+  s = add(s, tick);
+  writeWav(path.join(OUT, 'drop.wav'), normalize(s, 0.5));
 })();
 
-// 5) CLICK — arayüz tık sesi
-writeWav('click.wav', tone({ dur: 0.05, freq: [900, 700], wave: square, vol: 0.3, decay: 9 }));
+// PLACE — kat oturdu
+(() => {
+  const s = thud({ f0: 170, f1: 78, dur: 0.32 });
+  writeWav(path.join(OUT, 'place.wav'), normalize(reverb(s, { mix: 0.12, size: 0.5 }), 0.8));
+})();
+
+// PERFECT — tok vuruş + üstte parlayan akor (C6 E6 G6), hafif arpej
+(() => {
+  const base = thud({ f0: 190, f1: 90, dur: 0.3, body: 0.7, click: 0.25 });
+  const bell = chime([1046.5, 1318.5, 1568], { dur: 1.3, decay: 3, vol: 0.22, delayStep: 0.045 });
+  const s = add(base, bell, 1, len(0.01));
+  writeWav(path.join(OUT, 'perfect.wav'), normalize(reverb(s, { mix: 0.28, size: 0.8 }), 0.82));
+})();
+
+// CRASH — yıkılış: alçak gümbürtü + moloz
+(() => {
+  const n = len(1.4);
+  const r = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    r[i] = rnd() * Math.exp(-t * 2.6) * (0.7 + 0.3 * Math.sin(t * 31));
+  }
+  let s = lowpass(lowpass(r, 420), 420);
+  s = add(s, thud({ f0: 110, f1: 42, dur: 0.9, body: 1.2, click: 0.6, bright: 1200 }), 1);
+  // moloz parçaları
+  for (let k = 0; k < 14; k++) {
+    const off = len(0.05 + Math.random() * 0.8);
+    const c = thud({ f0: 400 + Math.random() * 500, f1: 200, dur: 0.06, body: 0.25, click: 0.3, bright: 3000 });
+    s = add(s, c, 0.5 * Math.exp(-off / SR), off);
+  }
+  writeWav(path.join(OUT, 'crash.wav'), normalize(reverb(s, { mix: 0.2, size: 0.9 }), 0.85));
+})();
+
+// CLICK — arayüz: yumuşak, kısa
+(() => {
+  const s = chime([1760], { dur: 0.06, decay: 70, vol: 0.4 });
+  const k = thud({ f0: 520, f1: 300, dur: 0.04, body: 0.2, click: 0.08, bright: 4000 });
+  writeWav(path.join(OUT, 'click.wav'), normalize(add(s, k), 0.4));
+})();
 
 console.log('Bitti.');
