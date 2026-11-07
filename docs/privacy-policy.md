@@ -24,7 +24,7 @@ Oyun 13 yaş altı çocuklara yönelik değildir ve bilerek hiçbir çocuktan ve
 
 ## İletişim
 
-Sorular için GitHub üzerinden kayıt (issue) açabilirsin: https://github.com/geniuseyis/CityStacker/issues
+Sorular için: plumblinedestek@gmail.com
 
 ---
 
@@ -54,4 +54,4 @@ The game is not directed at children under 13 and does not knowingly collect dat
 
 ## Contact
 
-For questions, open an issue on GitHub: https://github.com/geniuseyis/CityStacker/issues
+Questions: plumblinedestek@gmail.com
