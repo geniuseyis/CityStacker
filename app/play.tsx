@@ -33,7 +33,7 @@ import { rewardedReady, showRewarded } from '@/services/ads';
 import { gameFeedback } from '@/services/feedback';
 import { dailySeed, todayKey } from '@/state/daily';
 import { markTutorialDone, recordRun, spendTokens, useProgress, useSettings } from '@/state/store';
-import { Button, Glass, IconButton, T } from '@/ui/components';
+import { Button, Coin, Glass, IconButton, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
 type Popup = { id: number; text: string; tone: 'perfect' | 'good' | 'bad' };
@@ -86,10 +86,11 @@ export default function Play() {
           setShowTutorial(false);
           markTutorialDone();
         }
-      } else if (ev.type === 'miss') {
-        show(ev.livesLeft > 0 ? `${t('miss')} · ${t('livesLeft', { n: ev.livesLeft })}` : t('miss'), 'bad', 1300);
+      } else if (ev.type === 'miss' || ev.type === 'topple') {
+        const head = ev.type === 'topple' ? t('collapsed') : ev.tipped ? t('tipped') : t('miss');
+        show(ev.livesLeft > 0 ? `${head} · ${t('livesLeft', { n: ev.livesLeft })}` : head, 'bad', 1400);
       } else if (ev.type === 'over') {
-        setTimeout(() => setOver({ reason: ev.reason }), ev.reason === 'collapse' ? 900 : 300);
+        setTimeout(() => setOver({ reason: ev.reason }), 350);
       }
     }
     setHud({ score: s.score, floors: s.blocks.length, combo: s.combo, lives: s.lives });
@@ -185,42 +186,42 @@ export default function Play() {
 
       {/* HUD */}
       <View pointerEvents="box-none" style={[styles.hud, { paddingTop: insets.top + space.sm }]}>
+        {/* tek sıra: vinç kirişinin üstünde kalır */}
         <View style={styles.hudRow} pointerEvents="box-none">
-          <IconButton icon="pause" label={t('paused')} onPress={() => setPaused(true)} />
-          <View style={styles.lives} pointerEvents="none">
-            {Array.from({ length: LIVES_MAX }).map((_, i) => (
+          <View style={styles.side} pointerEvents="box-none">
+            <IconButton icon="pause" label={t('paused')} onPress={() => setPaused(true)} />
+          </View>
+
+          <View
+            style={styles.floorsBox}
+            pointerEvents="none"
+            accessible
+            accessibilityLabel={`${hud.floors} ${t('floors')}`}
+          >
+            <T style={styles.floorsNum}>{hud.floors}</T>
+            <View style={styles.comboTrack}>
               <View
-                key={i}
                 style={[
-                  styles.life,
-                  i >= hud.lives && styles.lifeLost,
-                  i < hud.lives && { backgroundColor: theme.accent },
+                  styles.comboFill,
+                  { width: `${comboRatio * 100}%`, backgroundColor: comboRatio >= 0.8 ? color.mint : theme.accent },
                 ]}
               />
-            ))}
+            </View>
           </View>
-          <View style={styles.scoreBox} pointerEvents="none">
-            <T v="label" faint>
-              {t('score')}
+
+          <View style={[styles.side, styles.scoreBox]} pointerEvents="none">
+            <T v="number" accessibilityLabel={`${t('score')} ${hud.score}`}>
+              {fmt(hud.score)}
             </T>
-            <T v="number">{fmt(hud.score)}</T>
+            <View style={styles.lives}>
+              {Array.from({ length: LIVES_MAX }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.life, i < hud.lives ? { backgroundColor: theme.accent } : styles.lifeLost]}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-
-        <View style={styles.floorsBox} pointerEvents="none">
-          <T style={styles.floorsNum}>{hud.floors}</T>
-          <T v="label" muted>
-            {t('floors')}
-          </T>
-        </View>
-
-        <View style={styles.comboTrack} pointerEvents="none">
-          <View
-            style={[
-              styles.comboFill,
-              { width: `${comboRatio * 100}%`, backgroundColor: comboRatio >= 0.8 ? color.mint : theme.accent },
-            ]}
-          />
         </View>
       </View>
 
@@ -313,7 +314,7 @@ export default function Play() {
                     style={{ backgroundColor: theme.accent }}
                     right={
                       <View style={styles.cost}>
-                        <Ionicons name="ellipse" size={10} color={color.accentInk} />
+                        <Coin size={14} />
                         <T v="caption" style={{ color: color.accentInk, fontFamily: font.bold }}>
                           {continueCost}
                         </T>
@@ -384,29 +385,29 @@ function TutorialHint({ text, sub }: { text: string; sub: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
   hud: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: space.lg },
-  hudRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  lives: { flexDirection: 'row', gap: 6 },
-  life: { width: 22, height: 6, borderRadius: 3 },
-  lifeLost: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  scoreBox: { alignItems: 'flex-end', minWidth: 88 },
-  floorsBox: { alignItems: 'center', marginTop: space.md },
+  hudRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  side: { width: 96 },
+  lives: { flexDirection: 'row', gap: 4, marginTop: 6 },
+  life: { width: 14, height: 4, borderRadius: 2 },
+  lifeLost: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  scoreBox: { alignItems: 'flex-end', paddingTop: 4 },
+  floorsBox: { alignItems: 'center' },
   floorsNum: {
     fontFamily: font.black,
-    fontSize: 64,
-    lineHeight: 68,
-    letterSpacing: -2,
+    fontSize: 48,
+    lineHeight: 52,
+    letterSpacing: -1.5,
     color: color.text,
     fontVariant: ['tabular-nums'],
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowRadius: 12,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowRadius: 10,
   },
   comboTrack: {
-    alignSelf: 'center',
-    width: 120,
-    height: 4,
+    width: 64,
+    height: 3,
     borderRadius: 2,
-    marginTop: space.sm,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    marginTop: 4,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     overflow: 'hidden',
   },
   comboFill: { height: '100%', borderRadius: 2 },
@@ -462,11 +463,16 @@ const styles = StyleSheet.create({
   },
   tutorial: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '56%',
+    alignSelf: 'center',
+    top: '52%',
     alignItems: 'center',
     gap: space.sm,
-    paddingHorizontal: space.xxl,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
+    marginHorizontal: space.xl,
+    borderRadius: radius.xl,
+    backgroundColor: 'rgba(11,15,26,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.borderStrong,
   },
 });

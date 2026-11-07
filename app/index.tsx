@@ -43,17 +43,26 @@ export default function Home() {
 
   return (
     <View style={styles.root}>
-      <GameCanvas game={game} theme={theme} demo paused={!focused} reducedMotion={settings.reducedMotion} />
+      {/* vitrin sahnesi ekranın üst kısmına sığar, alt panel kuleyi örtmez */}
+      <GameCanvas
+        game={game}
+        theme={theme}
+        demo
+        paused={!focused}
+        reducedMotion={settings.reducedMotion}
+        fit={0.6}
+        fitTop={insets.top + 36}
+      />
 
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(11,15,26,0)', 'rgba(11,15,26,0.55)', 'rgba(11,15,26,0.96)']}
-        locations={[0, 0.35, 0.78]}
+        colors={['rgba(11,15,26,0)', 'rgba(11,15,26,0.7)', 'rgba(11,15,26,0.97)']}
+        locations={[0, 0.3, 0.6]}
         style={styles.scrim}
       />
 
       <View style={[styles.top, { paddingTop: insets.top + space.sm }]}>
-        <Pill icon="ellipse" text={`${fmt(progress.tokens)}  ${t('tokens')}`} />
+        <Pill coin text={fmt(progress.tokens)} label={`${fmt(progress.tokens)} ${t('tokens')}`} />
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           <IconButton icon="trophy-outline" label={t('records')} onPress={() => router.push('/records')} />
           <IconButton icon="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />
@@ -141,7 +150,7 @@ function ModeCard({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
-  scrim: { ...StyleSheet.absoluteFill, top: '38%' },
+  scrim: { ...StyleSheet.absoluteFill, top: '52%' },
   top: {
     position: 'absolute',
     left: 0,
