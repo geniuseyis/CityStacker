@@ -18,26 +18,38 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   COMBO_MAX,
-  LIVES_MAX,
+  MAX_CONTINUES,
   canContinue,
+  continueCost,
   continueRun,
   createGame,
   drop,
   type GameEvent,
   type GameState,
+  type OverReason,
 } from '@/engine';
 import { useT } from '@/i18n';
 import { GameCanvas } from '@/render/GameCanvas';
 import { getTheme } from '@/render/themes';
-import { rewardedReady, showRewarded } from '@/services/ads';
+import { onGameFinished, rewardedReady, showRewarded } from '@/services/ads';
 import { gameFeedback, tapFeedback } from '@/services/feedback';
 import { dailySeed, todayKey } from '@/state/daily';
-import { markTutorialDone, recordRun, spendTokens, updateSettings, useProgress, useSettings } from '@/state/store';
-import { Button, Coin, Glass, IconButton, T } from '@/ui/components';
+import {
+  markTutorialDone,
+  recordRun,
+  spendTokens,
+  updateSettings,
+  useIsPro,
+  useProgress,
+  useSettings,
+} from '@/state/store';
+import { ContinueOffer } from '@/ui/ContinueOffer';
+import { Button, Glass, IconButton, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
 type Popup = { id: number; text: string; tone: 'perfect' | 'good' | 'bad' };
-type Hud = { score: number; floors: number; combo: number; lives: number };
+type Hud = { score: number; floors: number; combo: number };
+type Over = { reason: OverReason; stage: 'offer' | 'results' };
 
 function randomSeed() {
   const b = getRandomBytes(4);
@@ -52,16 +64,19 @@ export default function Play() {
   const settings = useSettings();
   const progress = useProgress();
   const theme = getTheme(settings.theme);
+  const pro = useIsPro();
 
   const newGame = () =>
     daily ? createGame(dailySeed(daily), 'normal') : createGame(randomSeed(), settings.difficulty);
   const game = useRef<GameState>(null as unknown as GameState);
   if (!game.current) game.current = newGame();
 
-  const [hud, setHud] = useState<Hud>({ score: 0, floors: 0, combo: 0, lives: LIVES_MAX });
+  const [hud, setHud] = useState<Hud>({ score: 0, floors: 0, combo: 0 });
   const [popup, setPopup] = useState<Popup | null>(null);
   const [paused, setPaused] = useState(false);
-  const [over, setOver] = useState<{ reason: 'collapse' | 'lives' } | null>(null);
+  const [over, setOver] = useState<Over | null>(null);
+  const [focused, setFocused] = useState(true);
+  const freeUsed = useRef(false); // Pro: oyun başına bir ücretsiz hak
   const [showTutorial, setShowTutorial] = useState(!progress.tutorialDone);
   const recorded = useRef(false);
   const popId = useRef(0);
@@ -86,14 +101,14 @@ export default function Play() {
           setShowTutorial(false);
           markTutorialDone();
         }
-      } else if (ev.type === 'miss' || ev.type === 'topple') {
-        const head = ev.type === 'topple' ? t('collapsed') : ev.tipped ? t('tipped') : t('miss');
-        show(ev.livesLeft > 0 ? `${head} · ${t('livesLeft', { n: ev.livesLeft })}` : head, 'bad', 1400);
       } else if (ev.type === 'over') {
-        setTimeout(() => setOver({ reason: ev.reason }), 350);
+        // bedava hak yok: kayıpta önce jetonla devam teklifi, olmazsa sonuç
+        const offer = !daily && canContinue(s);
+        setTimeout(() => setOver({ reason: ev.reason, stage: offer ? 'offer' : 'results' }), 450);
+        if (!offer) onGameFinished();
       }
     }
-    setHud({ score: s.score, floors: s.blocks.length, combo: s.combo, lives: s.lives });
+    setHud({ score: s.score, floors: s.blocks.length, combo: s.combo });
   };
 
   const finalize = () => {
@@ -120,11 +135,15 @@ export default function Play() {
   // android geri tuşu: çıkmak yerine duraklat
   useFocusEffect(
     useCallback(() => {
+      setFocused(true);
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         if (game.current.phase !== 'over') setPaused((p) => !p);
         return true;
       });
-      return () => sub.remove();
+      return () => {
+        setFocused(false);
+        sub.remove();
+      };
     }, [])
   );
 
@@ -137,9 +156,10 @@ export default function Play() {
     finalize();
     recorded.current = false;
     game.current = newGame();
+    freeUsed.current = false;
     setOver(null);
     setPopup(null);
-    setHud({ score: 0, floors: 0, combo: 0, lives: LIVES_MAX });
+    setHud({ score: 0, floors: 0, combo: 0 });
   };
 
   const exit = () => {
@@ -148,20 +168,26 @@ export default function Play() {
   };
 
   const s = game.current;
-  const continueCost = s.continues + 1;
-  const canCont = !daily && over && canContinue(s);
 
-  const doContinue = async (via: 'token' | 'ad') => {
-    if (!canContinue(game.current)) return;
+  const doContinue = async (via: 'token' | 'ad' | 'free') => {
+    const g = game.current;
+    if (!canContinue(g)) return;
     if (via === 'token') {
-      if (!spendTokens(continueCost)) return;
+      if (!spendTokens(continueCost(g))) return;
+    } else if (via === 'free') {
+      if (!pro || freeUsed.current) return;
+      freeUsed.current = true;
     } else if (!(await showRewarded())) {
       return;
     }
-    continueRun(game.current);
+    continueRun(g);
     setOver(null);
-    const g = game.current;
-    setHud({ score: g.score, floors: g.blocks.length, combo: g.combo, lives: g.lives });
+    setHud({ score: g.score, floors: g.blocks.length, combo: g.combo });
+  };
+
+  const toResults = () => {
+    setOver((o) => (o ? { ...o, stage: 'results' } : o));
+    onGameFinished();
   };
 
   const comboRatio = Math.min(hud.combo, COMBO_MAX) / COMBO_MAX;
@@ -214,14 +240,6 @@ export default function Play() {
             <T v="number" accessibilityLabel={`${t('score')} ${hud.score}`}>
               {fmt(hud.score)}
             </T>
-            <View style={styles.lives}>
-              {Array.from({ length: LIVES_MAX }).map((_, i) => (
-                <View
-                  key={i}
-                  style={[styles.life, i < hud.lives ? { backgroundColor: theme.accent } : styles.lifeLost]}
-                />
-              ))}
-            </View>
           </View>
         </View>
       </View>
@@ -304,7 +322,32 @@ export default function Play() {
         </Animated.View>
       )}
 
-      {over && (
+      {over?.stage === 'offer' && (
+        <Animated.View
+          entering={FadeIn.duration(220)}
+          style={[styles.overlay, { paddingBottom: insets.bottom + space.lg }]}
+        >
+          <ContinueOffer
+            reason={over.reason}
+            floors={s.blocks.length}
+            score={s.score}
+            cost={continueCost(s)}
+            tokens={progress.tokens}
+            livesLeft={MAX_CONTINUES - s.continues}
+            free={pro && !freeUsed.current}
+            ad={rewardedReady()}
+            accent={theme.accent}
+            active={focused}
+            onBuy={() => doContinue('token')}
+            onFree={() => doContinue('free')}
+            onAd={() => doContinue('ad')}
+            onShop={() => router.push('/shop')}
+            onDecline={toResults}
+          />
+        </Animated.View>
+      )}
+
+      {over?.stage === 'results' && (
         <Animated.View
           entering={FadeIn.duration(220)}
           style={[styles.overlay, { paddingBottom: insets.bottom + space.lg }]}
@@ -315,7 +358,7 @@ export default function Play() {
                 v="label"
                 style={{ textAlign: 'center', color: over.reason === 'collapse' ? color.danger : theme.accent }}
               >
-                {over.reason === 'collapse' ? t('collapsed') : t('outOfBlocks')}
+                {t(`reason.${over.reason}` as 'reason.miss')}
               </T>
               <View style={{ alignItems: 'center' }}>
                 <T style={styles.bigScore}>{fmt(s.score)}</T>
@@ -343,42 +386,13 @@ export default function Play() {
                 <Stat label={t('bestCombo')} value={`×${s.bestCombo}`} />
               </View>
 
-              {canCont && (
-                <View style={{ gap: space.sm }}>
-                  <Button
-                    title={t('continue')}
-                    icon="refresh"
-                    onPress={() => doContinue('token')}
-                    disabled={progress.tokens < continueCost}
-                    style={{ backgroundColor: theme.accent }}
-                    right={
-                      <View style={styles.cost}>
-                        <Coin size={14} />
-                        <T v="caption" style={{ color: color.accentInk, fontFamily: font.bold }}>
-                          {continueCost}
-                        </T>
-                      </View>
-                    }
-                  />
-                  {rewardedReady() && (
-                    <Button
-                      title={t('watchAd')}
-                      kind="secondary"
-                      icon="play-circle-outline"
-                      onPress={() => doContinue('ad')}
-                    />
-                  )}
-                </View>
-              )}
-
               <View style={{ flexDirection: 'row', gap: space.sm }}>
                 <Button title={t('home')} kind="secondary" icon="home-outline" onPress={exit} style={{ flex: 1 }} />
                 <Button
                   title={t('playAgain')}
-                  kind={canCont ? 'secondary' : 'primary'}
                   icon="reload"
                   onPress={restart}
-                  style={[{ flex: 1.4 }, !canCont && { backgroundColor: theme.accent }]}
+                  style={{ flex: 1.4, backgroundColor: theme.accent }}
                 />
               </View>
             </Glass>
@@ -460,9 +474,6 @@ const styles = StyleSheet.create({
   hud: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: space.lg },
   hudRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   side: { width: 96 },
-  lives: { flexDirection: 'row', gap: 4, marginTop: 6 },
-  life: { width: 14, height: 4, borderRadius: 2 },
-  lifeLost: { backgroundColor: 'rgba(255,255,255,0.2)' },
   scoreBox: { alignItems: 'flex-end', paddingTop: 4 },
   floorsBox: { alignItems: 'center' },
   floorsNum: {
@@ -524,16 +535,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
   },
   divider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: color.borderStrong },
-  cost: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 4,
-    paddingHorizontal: 8,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-  },
   quick: { flexDirection: 'row', gap: space.sm },
   quickBtn: {
     width: 56,
