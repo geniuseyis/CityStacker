@@ -14,11 +14,14 @@ import {
   PIVOT_Y,
   VIEW_H,
   VIEW_W,
+  blockViewX,
+  leanAt,
   levelTop,
   nextRandom,
   ropeEnd,
   type GameEvent,
   type GameState,
+  type ToppledBlock,
 } from '@/engine';
 import { alpha, mix, smooth } from './color';
 import type { SkyTheme } from './themes';
@@ -46,6 +49,20 @@ type Particle = {
 };
 
 type Ring = { x: number; y: number; t: number; color: string };
+
+// devrilen bölüm: önce pivot (destek katın kenarı) etrafında katı cisim gibi döner,
+// ağırlık merkezi kenarı iyice geçince serbest düşer
+type Debris = {
+  blocks: ToppledBlock[];
+  px: number;
+  py: number;
+  dir: 1 | -1;
+  angle: number; // derece
+  av: number; // derece/sn
+  fall: number;
+  fallV: number;
+  driftX: number;
+};
 
 function paint(color?: string): SkPaint {
   const p = Skia.Paint();
@@ -85,6 +102,7 @@ export class Scene {
 
   private particles: Particle[] = [];
   private rings: Ring[] = [];
+  private debris: Debris[] = [];
   private flash = 0;
   private shake = 0;
   private time = 0;
@@ -227,7 +245,7 @@ export class Scene {
               Skia.Shader.MakeRadialGradient(
                 vec(px, py),
                 rad,
-                [C(alpha(tint, 0.16)), C(alpha(tint, 0))],
+                [C(alpha(tint, 0.09)), C(alpha(tint, 0))],
                 null,
                 TileMode.Clamp
               )
@@ -352,11 +370,25 @@ export class Scene {
         break;
       }
       case 'miss':
-        this.dust(ev.x, ev.y + BLOCK, Math.round(18 * lots), 1);
+        if (ev.tipped) this.dust(ev.x, ev.y + BLOCK, Math.round(10 * lots), 0.7);
         break;
-      case 'collapse':
-        this.dust(ev.x, ev.y + BLOCK, Math.round(40 * lots), 1.4);
-        if (!this.reducedMotion) this.shake = 1;
+      case 'topple':
+        this.debris.push({
+          blocks: ev.blocks,
+          px: ev.pivotX,
+          py: ev.pivotY,
+          dir: ev.dir,
+          angle: 0,
+          av: ev.dir * 20,
+          fall: 0,
+          fallV: 0,
+          driftX: 0,
+        });
+        this.dust(ev.pivotX, ev.pivotY, Math.round(22 * lots), 1.1);
+        if (!this.reducedMotion) this.shake = 0.7;
+        break;
+      case 'continue':
+        this.debris = [];
         break;
       default:
         break;
@@ -385,7 +417,7 @@ export class Scene {
   }
 
   private dust(x: number, y: number, n: number, power: number) {
-    const base = mix(this.theme.near, '#B9AFA6', 0.55);
+    const base = mix(this.theme.skyLow[1], '#FFFFFF', 0.35);
     for (let i = 0; i < n; i++) {
       const life = 0.7 + this.rand() * 0.7;
       const dir = this.rand() < 0.5 ? -1 : 1;
@@ -397,7 +429,7 @@ export class Scene {
         g: 260,
         life,
         max: life,
-        size: 6 + this.rand() * 10 * power,
+        size: 3 + this.rand() * 5 * power,
         rot: 0,
         vr: 0,
         color: mix(base, '#FFFFFF', this.rand() * 0.3),
@@ -409,6 +441,7 @@ export class Scene {
   reset() {
     this.particles = [];
     this.rings = [];
+    this.debris = [];
     this.flash = 0;
     this.shake = 0;
   }
@@ -427,14 +460,15 @@ export class Scene {
     return sh;
   }
 
-  // ekran boyutu (px) verilir, sahne bir SkPicture olarak döner
-  render(s: GameState, dt: number, width: number, height: number): SkPicture {
+  // ekran boyutu (px) verilir, sahne bir SkPicture olarak döner.
+  // fitHeight: sahnenin sığdırılacağı yükseklik (ana menüde ekranın üst kısmı)
+  render(s: GameState, dt: number, width: number, height: number, fitHeight = height, fitTop = 0): SkPicture {
     this.time += dt;
     this.step(dt, s);
 
-    const k = Math.min(width / VIEW_W, height / VIEW_H);
+    const k = Math.min(width / VIEW_W, fitHeight / VIEW_H);
     const ox = (width - VIEW_W * k) / 2;
-    const oy = height - VIEW_H * k;
+    const oy = fitTop + fitHeight - VIEW_H * k;
     const t = this.theme;
     const alt = smooth(0, 3200, s.camY);
 
@@ -492,9 +526,10 @@ export class Scene {
 
     // zemin
     const gy = GROUND_Y + s.camY;
-    if (gy < VIEW_H + 40) {
+    const below = (height - fitTop - fitHeight) / k;
+    if (gy < VIEW_H + 40 + below) {
       p.setShader(linear(0, gy, 0, gy + 160, [t.ground, mix(t.ground, '#000000', 0.5)]));
-      c.drawRect(R(-SPAN, gy, VIEW_W + SPAN * 2, 400), p);
+      c.drawRect(R(-SPAN, gy, VIEW_W + SPAN * 2, 400 + below), p);
       p.setShader(null);
       p.setColor(C(t.groundEdge));
       p.setAlphaf(0.8);
@@ -505,7 +540,7 @@ export class Scene {
 
       // kulenin zemine düşen yumuşak gölgesi
       if (s.blocks.length) {
-        const bx = s.blocks[0].cx + s.camX;
+        const bx = blockViewX(s, 0);
         p.setShader(
           Skia.Shader.MakeRadialGradient(
             vec(bx, gy + 3),
@@ -523,25 +558,29 @@ export class Scene {
       }
     }
 
-    // kule
+    // kule: katlar düz durur, sadece esneme kadar kayar. Eğilen bir kirişte
+    // olduğu gibi her kat o noktadaki eğim kadar çok az döner.
     const n = s.blocks.length;
     for (let i = 0; i < n; i++) {
       const b = s.blocks[i];
       const y = levelTop(b.level) + s.camY;
       if (y > VIEW_H + BLOCK || y < -BLOCK * 2 - 400) continue;
-      const x = b.cx - BLOCK / 2 + s.camX;
+      const x = blockViewX(s, i) - BLOCK / 2;
+      const slope = i > 0 ? (Math.atan((leanAt(s, i) - leanAt(s, i - 1)) / BLOCK) * 180) / Math.PI : 0;
       c.save();
       c.translate(x, y);
-      if (b.rot) c.rotate(b.rot, BLOCK / 2, BLOCK / 2);
+      if (Math.abs(slope) > 0.05) c.rotate(slope, BLOCK / 2, BLOCK);
       c.drawPicture(this.blockPic(b.style, b.lit, b.level === 0));
       c.restore();
     }
 
+    this.drawDebris(c);
     this.drawCrane(c, s);
 
     if (s.cur) {
       c.save();
       c.translate(s.cur.x, s.cur.y);
+      if (s.cur.rot) c.rotate(s.cur.rot, BLOCK / 2, BLOCK);
       c.drawPicture(this.blockPic(s.cur.style, s.cur.lit, n === 0 && s.phase !== 'falling'));
       c.restore();
     }
@@ -616,7 +655,7 @@ export class Scene {
     for (const q of this.particles) {
       const a = Math.max(0, Math.min(1, q.life / q.max));
       p.setColor(C(q.color));
-      p.setAlphaf(q.round ? a * 0.55 : a);
+      p.setAlphaf(q.round ? a * a * 0.4 : a);
       if (q.round) {
         c.drawCircle(q.x, q.y, q.size * (q.g < 500 ? 1.4 - a * 0.4 : 0.5), p);
       } else {
@@ -663,6 +702,36 @@ export class Scene {
     if (this.rings.length) {
       for (const r of this.rings) r.t += dt * 1.8;
       this.rings = this.rings.filter((r) => r.t < 1);
+    }
+    if (this.debris.length) {
+      for (const d of this.debris) {
+        // devrilme: açı büyüdükçe yerçekiminin torku artar (sin θ)
+        const th = (Math.abs(d.angle) * Math.PI) / 180;
+        d.av += d.dir * (90 + 520 * Math.sin(th)) * dt;
+        d.angle += d.av * dt;
+        // ağırlık merkezi kenarı iyice geçince destekten kopar
+        if (Math.abs(d.angle) > 28) {
+          d.fallV += 1250 * dt;
+          d.fall += d.fallV * dt;
+          d.driftX += d.dir * 60 * dt;
+        }
+      }
+      this.debris = this.debris.filter((d) => d.fall < 1600);
+    }
+  }
+
+  private drawDebris(c: SkCanvas) {
+    for (const d of this.debris) {
+      c.save();
+      c.translate(d.px + d.driftX, d.py + d.fall);
+      c.rotate(d.angle, 0, 0);
+      for (const b of d.blocks) {
+        c.save();
+        c.translate(b.x - d.px, b.y - d.py);
+        c.drawPicture(this.blockPic(b.style, b.lit, false));
+        c.restore();
+      }
+      c.restore();
     }
   }
 }
