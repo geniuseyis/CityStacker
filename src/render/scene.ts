@@ -4,7 +4,6 @@ import {
   TileMode,
   vec,
   type SkCanvas,
-  type SkPaint,
   type SkPicture,
   type SkShader,
 } from '@shopify/react-native-skia';
@@ -14,6 +13,7 @@ import {
   PIVOT_Y,
   VIEW_H,
   VIEW_W,
+  WEATHER,
   DIFFICULTY,
   PERFECT_TOL,
   blockViewX,
@@ -27,13 +27,10 @@ import {
   type ToppledBlock,
 } from '@/engine';
 import { alpha, mix, smooth } from './color';
+import { C, R, linear, paint, record } from './draw';
+import { DEPTH, TOP, drawFloor } from './floors';
 import type { SkyTheme } from './themes';
 
-const C = (c: string) => Skia.Color(c);
-const R = (x: number, y: number, w: number, h: number) => Skia.XYWHRect(x, y, w, h);
-
-const DEPTH = 8; // blokların sağ yan yüz derinliği
-const TOP = 5;
 const SPAN = 260; // arka plan katmanlarının ekran dışına taşma payı
 
 type Particle = {
@@ -53,6 +50,11 @@ type Particle = {
 
 type Ring = { x: number; y: number; t: number; color: string };
 
+// yağmur damlası ya da rüzgâr çizgisi (görsel, oyunu etkilemez)
+type Streak = { x: number; y: number; vx: number; vy: number; len: number; life: number; rain: boolean };
+
+const GHOST_GAP = 140; // hayalet kule oyuncunun kulesinin bu kadar sağında
+
 // devrilen bölüm: önce pivot (destek katın kenarı) etrafında katı cisim gibi döner,
 // ağırlık merkezi kenarı iyice geçince serbest düşer
 type Debris = {
@@ -66,31 +68,6 @@ type Debris = {
   fallV: number;
   driftX: number;
 };
-
-function paint(color?: string): SkPaint {
-  const p = Skia.Paint();
-  p.setAntiAlias(true);
-  if (color) p.setColor(C(color));
-  return p;
-}
-
-function linear(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  colors: string[],
-  pos: number[] | null = null
-): SkShader {
-  return Skia.Shader.MakeLinearGradient(vec(x0, y0), vec(x1, y1), colors.map(C), pos, TileMode.Clamp);
-}
-
-function record(w: number, h: number, draw: (c: SkCanvas) => void, x = 0, y = 0): SkPicture {
-  const rec = Skia.PictureRecorder();
-  const c = rec.beginRecording(R(x, y, w, h));
-  draw(c);
-  return rec.finishRecordingAsPicture();
-}
 
 export class Scene {
   theme: SkyTheme;
@@ -111,8 +88,18 @@ export class Scene {
   private time = 0;
   private hook = { x: VIEW_W / 2, y: PIVOT_Y + 40 };
 
+  private skin = 'classic';
+  private craneColor: string | null = null;
+  private craneDark: string | null = null;
+
+  private streaks: Streak[] = [];
+  private bolt: { pts: [number, number][]; t: number } | null = null;
+  private lightning = 0;
+  private boltIn = 4;
+
   private p = paint();
   private stroke = paint();
+  private layerPaint = paint();
   private dash = Skia.PathEffect.MakeDash([6, 5], 0);
   private fxRng = { rng: 0x5eed };
 
@@ -130,6 +117,17 @@ export class Scene {
     this.skyCache.clear();
     this.buildBackground();
     this.clouds = this.buildClouds();
+  }
+
+  setSkin(skin: string) {
+    if (skin === this.skin) return;
+    this.skin = skin;
+    this.blockPics.clear();
+  }
+
+  setCrane(color: string | null, dark: string | null) {
+    this.craneColor = color;
+    this.craneDark = dark;
   }
 
   private rand() {
@@ -270,95 +268,16 @@ export class Scene {
   }
 
   private blockPic(style: number, lit: number, base: boolean): SkPicture {
-    const key = `${style}:${lit}:${base ? 1 : 0}`;
+    const key = `${this.skin}:${style}:${lit}:${base ? 1 : 0}`;
     let pic = this.blockPics.get(key);
     if (pic) return pic;
-    const t = this.theme;
-    const pal = t.blocks[style % t.blocks.length];
-    const B = BLOCK;
-
     pic = record(
-      B + DEPTH + 4,
-      B + TOP + 4,
-      (c) => {
-        // sağ yan yüz
-        const side = Skia.PathBuilder.Make()
-          .moveTo(B, 0)
-          .lineTo(B + DEPTH, -TOP)
-          .lineTo(B + DEPTH, B - TOP)
-          .lineTo(B, B)
-          .close()
-          .build();
-        c.drawPath(side, paint(pal.side));
-        // üst yüz (bir üstteki blok bunu örter, sadece tepe görünür)
-        const top = Skia.PathBuilder.Make()
-          .moveTo(0, 0)
-          .lineTo(DEPTH, -TOP)
-          .lineTo(B + DEPTH, -TOP)
-          .lineTo(B, 0)
-          .close()
-          .build();
-        c.drawPath(top, paint(pal.slab));
-
-        const face = paint();
-        face.setShader(linear(0, 0, 0, B, [pal.face, pal.faceLow]));
-        c.drawRect(R(0, 0, B, B), face);
-
-        const slab = paint(pal.slab);
-        c.drawRect(R(0, 0, B, 5), slab);
-        c.drawRect(R(0, B - 2, B, 2), paint(pal.side));
-        const hl = paint('#FFFFFF');
-        hl.setAlphaf(0.2);
-        c.drawRect(R(0, 0, 1.5, B), hl);
-
-        const glass = paint();
-        glass.setShader(linear(0, 10, 0, B, t.glass));
-        const litP = paint();
-        litP.setShader(linear(0, 10, 0, B, t.lit));
-        const sheen = paint('#FFFFFF');
-        sheen.setAlphaf(0.14);
-        const mull = paint(pal.side);
-        mull.setAlphaf(0.55);
-
-        if (base) {
-          // lobi: tek parça cam, ortada kapı, saçak
-          c.drawRRect(Skia.RRectXY(R(6, 16, B - 12, B - 18), 2, 2), glass);
-          c.drawRect(R(B / 2 - 7, B - 26, 14, 24), litP);
-          c.drawRect(R(-3, 12, B + 6, 4), slab);
-          for (let i = 1; i < 4; i++) c.drawRect(R(6 + ((B - 12) / 4) * i, 16, 1, B - 18), mull);
-          return;
-        }
-
-        const cols = 3;
-        const rows = 2;
-        const gx = 4;
-        const gy = 5;
-        const ww = (B - 14 - gx * (cols - 1)) / cols;
-        const wh = (B - 16 - gy * (rows - 1)) / rows;
-        for (let rr = 0; rr < rows; rr++) {
-          for (let cc = 0; cc < cols; cc++) {
-            const i = rr * cols + cc;
-            const x = 7 + cc * (ww + gx);
-            const y = 11 + rr * (wh + gy);
-            const on = (lit >> i) & 1;
-            c.drawRRect(Skia.RRectXY(R(x, y, ww, wh), 1.5, 1.5), on ? litP : glass);
-            if (!on) {
-              const tri = Skia.PathBuilder.Make()
-                .moveTo(x, y)
-                .lineTo(x + ww * 0.7, y)
-                .lineTo(x, y + wh * 0.55)
-                .close()
-                .build();
-              c.drawPath(tri, sheen);
-            }
-            c.drawRect(R(x + ww / 2 - 0.5, y, 1, wh), mull);
-          }
-        }
-      },
+      BLOCK + DEPTH + 4,
+      BLOCK + TOP + 4,
+      (c) => drawFloor(c, this.theme, this.skin, style, lit, base),
       -2,
       -TOP - 2
     );
-
     this.blockPics.set(key, pic);
     return pic;
   }
@@ -449,6 +368,9 @@ export class Scene {
   }
 
   reset() {
+    this.streaks = [];
+    this.bolt = null;
+    this.lightning = 0;
     this.particles = [];
     this.rings = [];
     this.debris = [];
@@ -479,7 +401,8 @@ export class Scene {
     height: number,
     fitHeight = height,
     fitTop = 0,
-    guide = false
+    guide = false,
+    ghost: GameState | null = null
   ): SkPicture {
     this.time += dt;
     this.step(dt, s);
@@ -498,6 +421,14 @@ export class Scene {
     p.setShader(this.skyShader(alt, oy, oy + GROUND_Y * k));
     c.drawRect(R(0, 0, width, height), p);
     p.setShader(null);
+
+    // fırtına: gök kararır
+    if (s.weather === 'storm') {
+      p.setColor(C('#0A0C1C'));
+      p.setAlphaf(0.38);
+      c.drawRect(R(0, 0, width, height), p);
+      p.setAlphaf(1);
+    }
 
     const shakeX = this.shake > 0 ? (this.rand() - 0.5) * this.shake * 14 : 0;
     const shakeY = this.shake > 0 ? (this.rand() - 0.5) * this.shake * 6 : 0;
@@ -542,6 +473,23 @@ export class Scene {
       c.restore();
     }
 
+    // şimşek: göğe çizilen kısa ömürlü kırık çizgi
+    if (this.bolt) {
+      const st = this.stroke;
+      st.setColor(C('#F2F4FF'));
+      st.setAlphaf(Math.min(1, this.bolt.t * 6));
+      st.setStrokeWidth(2.4);
+      for (let i = 1; i < this.bolt.pts.length; i++) {
+        const [x0, y0] = this.bolt.pts[i - 1];
+        const [x1, y1] = this.bolt.pts[i];
+        c.drawLine(x0, y0, x1, y1, st);
+      }
+      st.setAlphaf(1);
+    }
+
+    // rüzgâr çizgileri: kulenin arkasında
+    this.drawStreaks(c, false);
+
     // zemin
     const gy = GROUND_Y + s.camY;
     const below = (height - fitTop - fitHeight) / k;
@@ -576,6 +524,18 @@ export class Scene {
       }
     }
 
+    // sis: şehrin üstüne yoğun pus bantları
+    if (s.weather === 'fog') {
+      const fog = mix(t.skyLow[1], '#FFFFFF', 0.55);
+      p.setShader(linear(0, gy - 360, 0, gy, [alpha(fog, 0), alpha(fog, 0.55)]));
+      c.drawRect(R(-SPAN, gy - 360, VIEW_W + SPAN * 2, 362), p);
+      p.setShader(linear(0, 120, 0, 520, [alpha(fog, 0), alpha(fog, 0.28), alpha(fog, 0)]));
+      c.drawRect(R(-SPAN, 120, VIEW_W + SPAN * 2, 400), p);
+      p.setShader(null);
+    }
+
+    if (ghost) this.drawGhost(c, s, ghost);
+
     // kule: katlar düz durur, sadece esneme kadar kayar. Eğilen bir kirişte
     // olduğu gibi her kat o noktadaki eğim kadar çok az döner.
     const n = s.blocks.length;
@@ -605,7 +565,22 @@ export class Scene {
     }
 
     this.drawFx(c);
+    // yağmur her şeyin önünde
+    this.drawStreaks(c, true);
     c.restore();
+
+    if (s.weather === 'fog') {
+      p.setColor(C(mix(t.skyLow[1], '#FFFFFF', 0.6)));
+      p.setAlphaf(0.1);
+      c.drawRect(R(0, 0, width, height), p);
+      p.setAlphaf(1);
+    }
+    if (this.lightning > 0) {
+      p.setColor(C('#E8EDFF'));
+      p.setAlphaf(this.lightning * 0.45);
+      c.drawRect(R(0, 0, width, height), p);
+      p.setAlphaf(1);
+    }
 
     if (this.flash > 0) {
       p.setColor(C('#FFFFFF'));
@@ -624,8 +599,11 @@ export class Scene {
     const jibY = 92;
     const jibH = 16;
 
+    const crane = this.craneColor ?? t.crane;
+    const craneDark = this.craneDark ?? t.craneDark;
+
     // kafes kiriş
-    st.setColor(C(t.crane));
+    st.setColor(C(crane));
     st.setStrokeWidth(3);
     c.drawLine(-SPAN, jibY, VIEW_W + SPAN, jibY, st);
     c.drawLine(-SPAN, jibY + jibH, VIEW_W + SPAN, jibY + jibH, st);
@@ -637,9 +615,9 @@ export class Scene {
 
     // araba
     const cx = VIEW_W / 2;
-    p.setColor(C(t.craneDark));
+    p.setColor(C(craneDark));
     c.drawRRect(Skia.RRectXY(R(cx - 16, jibY + jibH - 2, 32, 12), 3, 3), p);
-    p.setColor(C(t.crane));
+    p.setColor(C(crane));
     c.drawCircle(cx - 9, jibY + jibH - 2, 3, p);
     c.drawCircle(cx + 9, jibY + jibH - 2, 3, p);
 
@@ -656,7 +634,7 @@ export class Scene {
     st.setStrokeWidth(1.6);
     c.drawLine(cx - 3, jibY + jibH + 10, cx - 1, PIVOT_Y, st);
     c.drawLine(cx + 3, jibY + jibH + 10, cx + 1, PIVOT_Y, st);
-    p.setColor(C(t.craneDark));
+    p.setColor(C(craneDark));
     c.drawCircle(cx, PIVOT_Y, 4.5, p);
 
     c.drawLine(cx, PIVOT_Y, hx, hy - 12, st);
@@ -665,7 +643,7 @@ export class Scene {
       c.drawLine(hx, hy - 12, s.cur.x + 8, s.cur.y, st);
       c.drawLine(hx, hy - 12, s.cur.x + BLOCK - 8, s.cur.y, st);
     }
-    p.setColor(C(t.crane));
+    p.setColor(C(crane));
     c.drawRRect(Skia.RRectXY(R(hx - 5, hy - 18, 10, 8), 2, 2), p);
   }
 
@@ -697,7 +675,120 @@ export class Scene {
     st.setAlphaf(1);
   }
 
+  private stepWeather(dt: number, s: GameState) {
+    const w = s.weather;
+    const lots = this.reducedMotion ? 0.35 : 1;
+    const wind = WEATHER[w].push * s.windDir + s.gust;
+
+    if (w === 'storm') {
+      // yağmur
+      let n = Math.floor(240 * lots * dt + this.rand());
+      while (n-- > 0) {
+        this.streaks.push({
+          x: -SPAN + this.rand() * (VIEW_W + SPAN * 2),
+          y: -60 - this.rand() * 80,
+          vx: wind * 6,
+          vy: 900 + this.rand() * 300,
+          len: 0.018,
+          life: 1.6,
+          rain: true,
+        });
+      }
+      // şimşek
+      this.boltIn -= dt;
+      if (this.boltIn <= 0) {
+        this.boltIn = 5 + this.rand() * 6;
+        if (!this.reducedMotion) {
+          this.lightning = 1;
+          const pts: [number, number][] = [];
+          let x = 40 + this.rand() * (VIEW_W - 80);
+          for (let y = -20; y < 340; y += 24 + this.rand() * 26) {
+            pts.push([x, y]);
+            x += (this.rand() - 0.5) * 50;
+          }
+          this.bolt = { pts, t: 0.22 };
+        }
+      }
+    }
+    if (w === 'windy' || w === 'storm') {
+      let n = Math.floor((w === 'storm' ? 26 : 16) * lots * dt + this.rand());
+      const dir = Math.sign(wind) || 1;
+      while (n-- > 0) {
+        this.streaks.push({
+          x: dir > 0 ? -SPAN : VIEW_W + SPAN,
+          y: 60 + this.rand() * (VIEW_H - 160),
+          vx: dir * (520 + this.rand() * 380),
+          vy: 0,
+          len: 0.06 + this.rand() * 0.08,
+          life: 2,
+          rain: false,
+        });
+      }
+    }
+
+    if (this.streaks.length) {
+      for (const q of this.streaks) {
+        q.x += q.vx * dt;
+        q.y += q.vy * dt;
+        q.life -= dt;
+      }
+      this.streaks = this.streaks.filter((q) => q.life > 0 && q.y < VIEW_H + 40);
+    }
+    if (this.lightning > 0) this.lightning = Math.max(0, this.lightning - dt * 3.5);
+    if (this.bolt) {
+      this.bolt.t -= dt;
+      if (this.bolt.t <= 0) this.bolt = null;
+    }
+  }
+
+  private drawStreaks(c: SkCanvas, rain: boolean) {
+    if (!this.streaks.length) return;
+    const st = this.stroke;
+    st.setColor(C(rain ? '#C9D6FF' : '#FFFFFF'));
+    st.setAlphaf(rain ? 0.35 : 0.16);
+    st.setStrokeWidth(rain ? 1.2 : 1);
+    for (const q of this.streaks) {
+      if (q.rain !== rain) continue;
+      c.drawLine(q.x, q.y, q.x - q.vx * q.len, q.y - q.vy * q.len, st);
+    }
+    st.setAlphaf(1);
+  }
+
+  // Hayalet: rekor koşunun kaydı aynı anda oynatılır, kulesi yanda yarı saydam yükselir.
+  // Tepesinin hizasındaki kesik çizgi geçilmesi gereken yüksekliği gösterir.
+  private drawGhost(c: SkCanvas, s: GameState, g: GameState) {
+    const n = g.blocks.length;
+    if (!n) return;
+    const base = (s.blocks.length ? s.blocks[0].cx : VIEW_W / 2) + GHOST_GAP;
+    const g0 = g.blocks[0].cx;
+    this.layerPaint.setAlphaf(0.38);
+    c.saveLayer(this.layerPaint);
+    for (let i = 0; i < n; i++) {
+      const y = levelTop(i) + s.camY;
+      if (y > VIEW_H + BLOCK || y < -BLOCK * 2 - 400) continue;
+      const b = g.blocks[i];
+      c.save();
+      c.translate(base + (b.cx - g0) + s.camX + leanAt(g, i) - BLOCK / 2, y);
+      c.drawPicture(this.blockPic(b.style, b.lit, i === 0));
+      c.restore();
+    }
+    c.restore();
+
+    const top = levelTop(n - 1) + s.camY;
+    if (top > -40 && top < VIEW_H) {
+      const st = this.stroke;
+      st.setColor(C('#FFFFFF'));
+      st.setAlphaf(0.4);
+      st.setStrokeWidth(1.2);
+      st.setPathEffect(this.dash);
+      c.drawLine(-SPAN, top, VIEW_W + SPAN, top, st);
+      st.setPathEffect(null);
+      st.setAlphaf(1);
+    }
+  }
+
   private step(dt: number, s: GameState) {
+    this.stepWeather(dt, s);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 2.2);
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 1.8);
 
