@@ -30,9 +30,9 @@ import { useT } from '@/i18n';
 import { GameCanvas } from '@/render/GameCanvas';
 import { getTheme } from '@/render/themes';
 import { rewardedReady, showRewarded } from '@/services/ads';
-import { gameFeedback } from '@/services/feedback';
+import { gameFeedback, tapFeedback } from '@/services/feedback';
 import { dailySeed, todayKey } from '@/state/daily';
-import { markTutorialDone, recordRun, spendTokens, useProgress, useSettings } from '@/state/store';
+import { markTutorialDone, recordRun, spendTokens, updateSettings, useProgress, useSettings } from '@/state/store';
 import { Button, Coin, Glass, IconButton, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
@@ -180,6 +180,7 @@ export default function Play() {
           theme={theme}
           paused={paused}
           reducedMotion={settings.reducedMotion}
+          guide={!daily && (settings.guide || showTutorial)}
           onEvents={onEvents}
         />
       </Pressable>
@@ -250,17 +251,55 @@ export default function Play() {
 
       {paused && (
         <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(140)} style={styles.overlay}>
-          <Glass style={styles.sheet}>
-            <T v="title" style={{ textAlign: 'center' }}>
-              {t('paused')}
-            </T>
+          <Glass strong style={[styles.sheet, { marginBottom: insets.bottom }]}>
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <T v="title">{t('paused')}</T>
+              <T v="caption" faint>
+                {hud.floors} {t('floors').toLowerCase()} · {fmt(hud.score)}
+              </T>
+            </View>
+            <View style={styles.quick}>
+              <QuickToggle
+                icon={settings.sound ? 'volume-high' : 'volume-mute'}
+                label={t('sound')}
+                on={settings.sound}
+                accent={theme.accent}
+                onPress={() => updateSettings({ sound: !settings.sound })}
+              />
+              <QuickToggle
+                icon="musical-notes"
+                label={t('music')}
+                on={settings.music}
+                accent={theme.accent}
+                onPress={() => updateSettings({ music: !settings.music })}
+              />
+              <QuickToggle
+                icon="pulse"
+                label={t('haptics')}
+                on={settings.haptics}
+                accent={theme.accent}
+                onPress={() => updateSettings({ haptics: !settings.haptics })}
+              />
+            </View>
             <Button
               title={t('resume')}
               icon="play"
               onPress={() => setPaused(false)}
               style={{ backgroundColor: theme.accent }}
             />
-            <Button title={t('home')} kind="secondary" icon="home-outline" onPress={exit} />
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              <Button title={t('home')} kind="secondary" icon="home-outline" onPress={exit} style={{ flex: 1 }} />
+              <Button
+                title={t('restart')}
+                kind="secondary"
+                icon="reload"
+                onPress={() => {
+                  restart();
+                  setPaused(false);
+                }}
+                style={{ flex: 1 }}
+              />
+            </View>
           </Glass>
         </Animated.View>
       )}
@@ -347,6 +386,40 @@ export default function Play() {
         </Animated.View>
       )}
     </View>
+  );
+}
+
+function QuickToggle({
+  icon,
+  label,
+  on,
+  accent,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  on: boolean;
+  accent: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: on }}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
+      style={{ alignItems: 'center', gap: 6, flex: 1 }}
+    >
+      <View style={[styles.quickBtn, on && { backgroundColor: accent + '26', borderColor: accent }]}>
+        <Ionicons name={icon} size={22} color={on ? accent : color.textFaint} />
+      </View>
+      <T v="caption" faint={!on} numberOfLines={1}>
+        {label}
+      </T>
+    </Pressable>
   );
 }
 
@@ -460,6 +533,17 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  quick: { flexDirection: 'row', gap: space.sm },
+  quickBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.border,
   },
   tutorial: {
     position: 'absolute',
