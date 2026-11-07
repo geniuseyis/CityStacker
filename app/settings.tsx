@@ -91,6 +91,7 @@ export default function SettingsScreen() {
                 selected={s.theme === th.key}
                 bestFloors={p.bestFloors}
                 pro={pro}
+                skin={s.skin}
                 label={t(`theme.${th.key}` as 'theme.dusk')}
                 lockLabel={t('floorsLeft', { n: Math.max(0, th.unlockFloors - p.bestFloors) })}
                 selectedLabel={t('selected')}
@@ -229,6 +230,7 @@ function ThemeCard({
   selected,
   bestFloors,
   pro,
+  skin,
   label,
   lockLabel,
   selectedLabel,
@@ -239,6 +241,7 @@ function ThemeCard({
   selected: boolean;
   bestFloors: number;
   pro: boolean;
+  skin: string;
   label: string;
   lockLabel: string;
   selectedLabel: string;
@@ -255,7 +258,7 @@ function ThemeCard({
       style={[styles.themeCard, selected && { borderColor: theme.accent }]}
     >
       <View style={styles.preview}>
-        <ThemePreview theme={theme} width={128} height={150} />
+        <ThemePreview theme={theme} width={128} height={150} skin={skin} />
         {!open && (
           <View style={styles.lock}>
             <View style={styles.lockBadge}>

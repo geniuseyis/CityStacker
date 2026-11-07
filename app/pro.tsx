@@ -10,6 +10,7 @@ import { useT } from '@/i18n';
 import { ThemePreview } from '@/render/ThemePreview';
 import { getTheme } from '@/render/themes';
 import { PRO_PRODUCTS, buyPro, priceOf, restorePurchases, type ProProduct } from '@/services/purchases';
+import { PRO_GIFT } from '@/state/store';
 import { useIsPro, useProgress } from '@/state/store';
 import { IconButton, Press, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
@@ -48,6 +49,7 @@ export default function Pro() {
   const perks: { icon: IconName; title: string; sub: string }[] = [
     { icon: 'ban', title: t('perkNoAds'), sub: t('perkNoAdsSub') },
     { icon: 'heart', title: t('perkFreeLife'), sub: t('perkFreeLifeSub') },
+    { icon: 'gift', title: t('perkWeekly', { n: PRO_GIFT }), sub: t('perkWeeklySub') },
     { icon: 'color-palette', title: t('perkSkies'), sub: t('perkSkiesSub') },
   ];
 
