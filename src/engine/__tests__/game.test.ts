@@ -10,16 +10,19 @@ import {
   createGame,
   dsin,
   drop,
+  makeGhost,
   nextRandom,
   predictOffset,
   seedFromString,
   simulate,
   step,
+  stepGhost,
   toRecord,
   verify,
   type GameEvent,
   type GameState,
 } from '../index';
+import { parseRecord } from '../../state/schema';
 
 // tahmini iniş kaçıklığı koşulu sağlayınca bırak, sonra sonucu bekle
 function dropWhen(s: GameState, ok: (d: number) => boolean, maxTicks = 120 * 30): boolean {
@@ -243,5 +246,54 @@ describe('replay', () => {
     expect(verify({ ...rec, score: rec.score + 100 })).toBe(false);
     expect(verify({ ...rec, floors: rec.floors + 1 })).toBe(false);
     if (rec.inputs.length > 1) expect(verify({ ...rec, inputs: rec.inputs.slice().reverse() })).toBe(false);
+  });
+});
+
+describe('hayalet', () => {
+  it('kayıt oyuncuyla aynı adımda oynatılınca rekorun aynısına ulaşır', () => {
+    // devam haklarını da içeren rastgele bir koşu
+    const s = createGame(77, 'normal');
+    const r = { rng: 991 };
+    for (let guard = 0; guard < 400; guard++) {
+      if (s.phase === 'over') {
+        if (canContinue(s) && nextRandom(r) > 0.4) continueRun(s);
+        else break;
+      }
+      const tol = nextRandom(r) < 0.5 ? 40 + nextRandom(r) * 40 : nextRandom(r) * 8;
+      dropWhen(s, (d) => Math.abs(d) < tol || nextRandom(r) < 0.004);
+    }
+    expect(s.phase).toBe('over');
+    const rec = toRecord(s);
+
+    // oyuncu kendi oyununu oynarken hayalet her adımda bir adım ilerler
+    const player = createGame(rec.seed, rec.difficulty, { weather: rec.weather });
+    const g = makeGhost(rec);
+    let floors = 0;
+    for (let k = 0; k < s.tick + 10; k++) {
+      step(player);
+      stepGhost(g);
+      floors = Math.max(floors, g.s.blocks.length);
+    }
+    expect(g.s.phase).toBe('over');
+    expect(g.s.score).toBe(rec.score);
+    expect(g.s.blocks.length).toBe(rec.floors);
+    expect(floors).toBeGreaterThanOrEqual(rec.floors);
+  });
+
+  it('diskten gelen bozuk kayıt reddedilir', () => {
+    const rec = toRecord(createGame(5, 'easy'));
+    expect(parseRecord(JSON.parse(JSON.stringify(rec)))).toEqual(rec);
+    expect(parseRecord({ ...rec, weather: 'tornado' })).toBeNull();
+    expect(
+      parseRecord({
+        ...rec,
+        inputs: [
+          { tick: 5, kind: 'drop' },
+          { tick: 2, kind: 'drop' },
+        ],
+      })
+    ).toBeNull();
+    expect(parseRecord({ ...rec, inputs: [{ tick: 1, kind: 'jump' }] })).toBeNull();
+    expect(parseRecord('çöp')).toBeNull();
   });
 });
