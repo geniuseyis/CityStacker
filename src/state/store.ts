@@ -5,7 +5,9 @@ import {
   MAX_RUNS,
   MAX_TOKENS,
   parseProgress,
+  isProActive,
   parseSettings,
+  type ProPlan,
   type Progress,
   type RunEntry,
   type Settings,
@@ -74,6 +76,24 @@ export function addTokens(n: number) {
   if (!Number.isFinite(n) || n <= 0) return;
   setProgress({ ...p, tokens: Math.min(MAX_TOKENS, p.tokens + Math.floor(n)) });
 }
+
+// mağaza doğruladıktan sonra çağrılır (bkz. services/purchases)
+export function setPro(plan: ProPlan | null) {
+  const p = get().progress;
+  if (!plan) {
+    setProgress({ ...p, pro: null });
+    return;
+  }
+  const day = 24 * 60 * 60 * 1000;
+  const until = plan === 'lifetime' ? null : Date.now() + (plan === 'weekly' ? 7 : 30) * day;
+  setProgress({ ...p, pro: { plan, until } });
+}
+
+export function useIsPro() {
+  return isProActive(useProgress().pro);
+}
+
+export const isPro = () => isProActive(get().progress.pro);
 
 export function markTutorialDone() {
   setProgress({ ...get().progress, tutorialDone: true });

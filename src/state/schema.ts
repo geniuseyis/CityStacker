@@ -17,6 +17,11 @@ export type Settings = {
 
 export type RunEntry = { score: number; floors: number; difficulty: Difficulty; ts: number; daily?: string };
 
+export type ProPlan = 'weekly' | 'monthly' | 'lifetime';
+
+// until: abonelik bitişi (ms), ömür boyu için null
+export type ProState = { plan: ProPlan; until: number | null };
+
 export type Progress = {
   tokens: number;
   best: Record<Difficulty, number>;
@@ -28,6 +33,7 @@ export type Progress = {
   daily: { date: string; best: number } | null;
   unlocked: string[];
   tutorialDone: boolean;
+  pro: ProState | null;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,7 +47,8 @@ export const DEFAULT_SETTINGS: Settings = {
   guide: false,
 };
 
-export const START_TOKENS = 3;
+// bedava hak olmadığı için yeni oyuncu birkaç jetonla başlar
+export const START_TOKENS = 5;
 export const MAX_TOKENS = 99999;
 const MAX_RUNS = 30;
 
@@ -56,6 +63,7 @@ export const DEFAULT_PROGRESS: Progress = {
   daily: null,
   unlocked: ['dusk'],
   tutorialDone: false,
+  pro: null,
 };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -94,6 +102,18 @@ function parseRun(v: unknown): RunEntry | null {
   };
 }
 
+// Not: gerçek satın almada Pro durumu mağazadan (RevenueCat) okunur, buradaki
+// kayıt sadece çevrimdışıyken son bilinen durumu göstermek için.
+function parsePro(v: unknown): ProState | null {
+  if (!isObj(v)) return null;
+  const plan = v.plan === 'weekly' || v.plan === 'monthly' || v.plan === 'lifetime' ? v.plan : null;
+  if (!plan) return null;
+  const until = plan === 'lifetime' ? null : typeof v.until === 'number' && Number.isFinite(v.until) ? v.until : 0;
+  return { plan, until };
+}
+
+export const isProActive = (p: ProState | null, now = Date.now()) => !!p && (p.until === null || p.until > now);
+
 export function parseProgress(raw: unknown): Progress {
   const d = DEFAULT_PROGRESS;
   if (!isObj(raw)) return { ...d, best: { ...d.best }, runs: [], unlocked: [...d.unlocked] };
@@ -122,6 +142,7 @@ export function parseProgress(raw: unknown): Progress {
     daily: dailyDate && DATE_RE.test(dailyDate) ? { date: dailyDate, best: int(daily!.best, 0) } : null,
     unlocked: unlocked.includes('dusk') ? unlocked : ['dusk', ...unlocked],
     tutorialDone: bool(raw.tutorialDone, false),
+    pro: parsePro(raw.pro),
   };
 }
 
