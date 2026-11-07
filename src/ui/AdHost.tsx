@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { Modal, StyleSheet, View } from 'react-native';
 import { registerAdHost } from '@/services/ads';
 import { useT } from '@/i18n';
 import { Press, T } from './components';
@@ -37,35 +36,36 @@ export function AdHost() {
     done.current = null;
   };
 
-  if (left === null) return null;
+  // Modal: alttan açılan sayfaların (formSheet) da üstünde görünsün
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.root}>
-      <View style={styles.badge}>
-        <T v="label" style={{ color: color.accentInk }}>
-          {t('testAd')}
-        </T>
-      </View>
-      <Ionicons name="play-circle" size={72} color="rgba(255,255,255,0.85)" />
-      <T v="heading" muted style={{ textAlign: 'center' }}>
-        {t('adPlaceholder')}
-      </T>
-      <Press label={t('back')} onPress={close} style={styles.close}>
-        {left > 0 ? (
-          <T v="heading" style={{ fontFamily: font.bold, fontVariant: ['tabular-nums'] }}>
-            {left}
+    <Modal visible={left !== null} animationType="fade" statusBarTranslucent onRequestClose={close}>
+      <View style={styles.root}>
+        <View style={styles.badge}>
+          <T v="label" style={{ color: color.accentInk }}>
+            {t('testAd')}
           </T>
-        ) : (
-          <Ionicons name="close" size={22} color={color.text} />
-        )}
-      </Press>
-    </Animated.View>
+        </View>
+        <Ionicons name="play-circle" size={72} color="rgba(255,255,255,0.85)" />
+        <T v="heading" muted style={{ textAlign: 'center' }}>
+          {t('adPlaceholder')}
+        </T>
+        <Press label={t('back')} onPress={close} style={styles.close}>
+          {left !== null && left > 0 ? (
+            <T v="heading" style={{ fontFamily: font.bold, fontVariant: ['tabular-nums'] }}>
+              {left}
+            </T>
+          ) : (
+            <Ionicons name="close" size={22} color={color.text} />
+          )}
+        </Press>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 100,
+    flex: 1,
     backgroundColor: '#05060B',
     alignItems: 'center',
     justifyContent: 'center',
