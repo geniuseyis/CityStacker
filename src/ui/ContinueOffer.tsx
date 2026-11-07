@@ -106,7 +106,7 @@ export function ContinueOffer(p: Props) {
         )}
 
         {p.ad && !p.free && (
-          <Button title={t('watchAd')} kind="secondary" icon="play-circle-outline" onPress={p.onAd} />
+          <Button title={t('watchAdLife')} kind="secondary" icon="play-circle-outline" onPress={p.onAd} />
         )}
 
         <View style={styles.footer}>
