@@ -19,6 +19,7 @@ export const en: Dict = {
   perfect: 'Perfect',
   good: 'Good',
   miss: 'Miss',
+  tipped: 'Tipped over',
   livesLeft: '{n} left',
   collapsed: 'Tower collapsed',
   outOfBlocks: 'Out of blocks',

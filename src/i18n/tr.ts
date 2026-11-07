@@ -17,6 +17,7 @@ export const tr = {
   perfect: 'Mükemmel',
   good: 'İyi',
   miss: 'Iska',
+  tipped: 'Kenardan devrildi',
   livesLeft: '{n} hak kaldı',
   collapsed: 'Kule yıkıldı',
   outOfBlocks: 'Bloklar bitti',

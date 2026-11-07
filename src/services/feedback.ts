@@ -36,12 +36,12 @@ export function gameFeedback(ev: GameEvent) {
       playSfx('crash');
       if (h) swallow(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning));
       break;
-    case 'collapse':
+    case 'topple':
       playSfx('crash');
       if (h) swallow(Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy));
       break;
     case 'over':
-      if (h && ev.reason === 'lives') swallow(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
+      if (h) swallow(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
       break;
     default:
       break;
