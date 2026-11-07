@@ -12,7 +12,16 @@ export type OverReason = 'collapse' | 'lives';
 export type Block = { level: number; cx: number; style: number; lit: number };
 
 // vinçteki / havadaki kat, ekran (view) uzayında sol-üst köşe. rot: derece (devrilirken)
-export type Hanging = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; style: number; lit: number };
+export type Hanging = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  style: number;
+  lit: number;
+};
 
 export type ToppledBlock = { x: number; y: number; style: number; lit: number };
 

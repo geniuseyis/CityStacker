@@ -12,6 +12,7 @@ export type Settings = {
   theme: string;
   lang: Lang | null; // null: cihaz dili
   reducedMotion: boolean;
+  guide: boolean; // nişan yardımı: tahmini iniş noktası
 };
 
 export type RunEntry = { score: number; floors: number; difficulty: Difficulty; ts: number; daily?: string };
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'dusk',
   lang: null,
   reducedMotion: false,
+  guide: false,
 };
 
 export const START_TOKENS = 3;
@@ -76,6 +78,7 @@ export function parseSettings(raw: unknown): Settings {
     theme: str(raw.theme) ?? d.theme,
     lang: raw.lang === 'tr' || raw.lang === 'en' ? raw.lang : null,
     reducedMotion: bool(raw.reducedMotion, d.reducedMotion),
+    guide: bool(raw.guide, d.guide),
   };
 }
 
