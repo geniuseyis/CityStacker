@@ -1,8 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTypeface } from '@shopify/react-native-skia';
 import { getRandomBytes } from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -19,20 +20,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   COMBO_MAX,
   MAX_CONTINUES,
+  WEATHER,
   canContinue,
   continueCost,
   continueRun,
   createGame,
   drop,
+  toRecord,
   type GameEvent,
   type GameState,
   type OverReason,
 } from '@/engine';
 import { useT } from '@/i18n';
 import { GameCanvas } from '@/render/GameCanvas';
+import { renderShareCard } from '@/render/shareCard';
 import { getTheme } from '@/render/themes';
 import { onGameFinished, rewardedReady, showRewarded } from '@/services/ads';
 import { gameFeedback, tapFeedback } from '@/services/feedback';
+import { shareImage } from '@/services/share';
+import { craneByKey } from '@/state/cosmetics';
 import { dailySeed, todayKey } from '@/state/daily';
 import {
   markTutorialDone,
@@ -46,6 +52,7 @@ import {
 import { ContinueOffer } from '@/ui/ContinueOffer';
 import { Button, Glass, IconButton, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
+import { WEATHER_ICON } from '@/ui/weather';
 
 type Popup = { id: number; text: string; tone: 'perfect' | 'good' | 'bad' };
 type Hud = { score: number; floors: number; combo: number };
@@ -64,10 +71,17 @@ export default function Play() {
   const settings = useSettings();
   const progress = useProgress();
   const theme = getTheme(settings.theme);
+  const crane = craneByKey(settings.crane);
   const pro = useIsPro();
+  // hayalet modunda rekor kaydı oyun boyunca sabit kalır (oyun içinde yeni rekor yazılsa da)
+  const [ghost] = useState(() => (mode === 'ghost' ? (progress.ghosts[settings.difficulty] ?? null) : null));
 
-  const newGame = () =>
-    daily ? createGame(dailySeed(daily), 'normal') : createGame(randomSeed(), settings.difficulty);
+  const newGame = () => {
+    if (daily) return createGame(dailySeed(daily), 'normal');
+    // hayalet: aynı seed ve hava, aynı başlangıç koşulları
+    if (ghost) return createGame(ghost.seed, ghost.difficulty, { weather: ghost.weather });
+    return createGame(randomSeed(), settings.difficulty);
+  };
   const game = useRef<GameState>(null as unknown as GameState);
   if (!game.current) game.current = newGame();
 
@@ -77,6 +91,14 @@ export default function Play() {
   const [over, setOver] = useState<Over | null>(null);
   const [focused, setFocused] = useState(true);
   const freeUsed = useRef(false); // Pro: oyun başına bir ücretsiz hak
+  const adUsed = useRef(false); // reklamla devam: oyun başına bir kez
+  const streak = useRef({ now: 0, best: 0 }); // üst üste mükemmel (görevler için)
+  const [ghostFloors, setGhostFloors] = useState(0);
+  const passed = useRef(false);
+  const [intro, setIntro] = useState(true);
+  const [sharing, setSharing] = useState(false);
+  const bold = useTypeface(require('@expo-google-fonts/sora/800ExtraBold/Sora_800ExtraBold.ttf'));
+  const semi = useTypeface(require('@expo-google-fonts/sora/600SemiBold/Sora_600SemiBold.ttf'));
   const [showTutorial, setShowTutorial] = useState(!progress.tutorialDone);
   const recorded = useRef(false);
   const popId = useRef(0);
@@ -95,7 +117,14 @@ export default function Play() {
     for (const ev of evs) {
       gameFeedback(ev);
       if (ev.type === 'land') {
-        if (ev.grade === 'perfect') show(ev.combo > 1 ? `${t('perfect')} ×${ev.combo}` : t('perfect'), 'perfect');
+        const sr = streak.current;
+        sr.now = ev.grade === 'perfect' ? sr.now + 1 : 0;
+        sr.best = Math.max(sr.best, sr.now);
+        if (ghost && !passed.current && s.blocks.length > ghost.floors) {
+          passed.current = true;
+          show(t('ghostBeaten'), 'perfect', 1400);
+        } else if (ev.grade === 'perfect')
+          show(ev.combo > 1 ? `${t('perfect')} ×${ev.combo}` : t('perfect'), 'perfect');
         else if (ev.grade === 'good') show(`${t('good')} ×${ev.combo}`, 'good', 650);
         if (showTutorial && s.blocks.length >= 2) {
           setShowTutorial(false);
@@ -116,13 +145,30 @@ export default function Play() {
     const s = game.current;
     if (s.phase !== 'over') return;
     recorded.current = true;
-    recordRun({ score: s.score, floors: s.blocks.length, perfects: s.perfects, difficulty: s.difficulty, daily });
+    recordRun({
+      score: s.score,
+      floors: s.blocks.length,
+      perfects: s.perfects,
+      perfectStreak: streak.current.best,
+      weather: s.weather,
+      daily: !!daily,
+      dailyKey: daily,
+      difficulty: s.difficulty,
+      ghostBeaten: !!ghost && s.blocks.length > ghost.floors,
+      record: toRecord(s),
+    });
   };
 
   // ekrandan çıkarken (oyun bitmişse) skoru kaydet
   const finalizeRef = useRef(finalize);
   finalizeRef.current = finalize;
   useEffect(() => () => finalizeRef.current(), []);
+
+  useEffect(() => {
+    if (!intro) return;
+    const id = setTimeout(() => setIntro(false), 2600);
+    return () => clearTimeout(id);
+  }, [intro]);
 
   // arka plana geçince otomatik duraklat
   useEffect(() => {
@@ -157,6 +203,10 @@ export default function Play() {
     recorded.current = false;
     game.current = newGame();
     freeUsed.current = false;
+    adUsed.current = false;
+    streak.current = { now: 0, best: 0 };
+    passed.current = false;
+    setIntro(true);
     setOver(null);
     setPopup(null);
     setHud({ score: 0, floors: 0, combo: 0 });
@@ -177,8 +227,9 @@ export default function Play() {
     } else if (via === 'free') {
       if (!pro || freeUsed.current) return;
       freeUsed.current = true;
-    } else if (!(await showRewarded())) {
-      return;
+    } else {
+      if (adUsed.current || !(await showRewarded())) return;
+      adUsed.current = true;
     }
     continueRun(g);
     setOver(null);
@@ -190,7 +241,40 @@ export default function Play() {
     onGameFinished();
   };
 
+  const share = async () => {
+    if (sharing || !bold || !semi) return;
+    setSharing(true);
+    const g = game.current;
+    const sub = [
+      daily ? t('daily') : t(g.difficulty),
+      g.weather !== 'clear' ? t(`weather.${g.weather}` as 'weather.clear') : null,
+      new Date().toLocaleDateString(t.locale, { day: 'numeric', month: 'long', year: 'numeric' }),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    // kart çizimi birkaç yüz ms sürebilir, önce yükleniyor durumu görünsün
+    await new Promise((r) => setTimeout(r, 30));
+    const bytes = renderShareCard({
+      theme,
+      skin: settings.skin,
+      blocks: g.blocks,
+      floors: g.blocks.length,
+      score: g.score.toLocaleString(t.locale),
+      unit: t('floors'),
+      scoreLabel: t('score').toLowerCase(),
+      subtitle: sub,
+      footer: t('shareFooter'),
+      footer2: t('shareFooter2'),
+      bold,
+      semi,
+    });
+    const ok = bytes ? await shareImage(bytes, t('shareTitle')) : false;
+    setSharing(false);
+    if (!ok) Alert.alert(t('share'), t('shareFailed'));
+  };
+
   const comboRatio = Math.min(hud.combo, COMBO_MAX) / COMBO_MAX;
+  const mult = WEATHER[s.weather].score;
   const fmt = (n: number) => n.toLocaleString(t.locale);
 
   return (
@@ -205,8 +289,12 @@ export default function Play() {
           game={game}
           theme={theme}
           paused={paused}
+          skin={settings.skin}
+          crane={crane}
           reducedMotion={settings.reducedMotion}
           guide={!daily && (settings.guide || showTutorial)}
+          ghost={ghost}
+          onGhostFloors={setGhostFloors}
           onEvents={onEvents}
         />
       </Pressable>
@@ -240,9 +328,49 @@ export default function Play() {
             <T v="number" accessibilityLabel={`${t('score')} ${hud.score}`}>
               {fmt(hud.score)}
             </T>
+            {s.weather !== 'clear' && (
+              <View style={styles.hudWeather}>
+                <MaterialCommunityIcons name={WEATHER_ICON[s.weather]} size={13} color={color.textMuted} />
+                <T v="caption" muted style={{ fontSize: 11 }}>
+                  ×{mult}
+                </T>
+              </View>
+            )}
           </View>
         </View>
+
+        {ghost && (
+          <View style={styles.ghostRow} pointerEvents="none">
+            <View style={[styles.ghostChip, hud.floors > ghostFloors && { borderColor: color.mint }]}>
+              <MaterialCommunityIcons
+                name="ghost"
+                size={14}
+                color={hud.floors > ghostFloors ? color.mint : color.text}
+              />
+              <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
+                {t('ghostFloors', { n: ghostFloors })}
+              </T>
+            </View>
+          </View>
+        )}
       </View>
+
+      {intro && s.weather !== 'clear' && !over && (
+        <Animated.View
+          entering={FadeInDown.duration(380)}
+          exiting={FadeOut.duration(400)}
+          style={styles.weatherBanner}
+          pointerEvents="none"
+        >
+          <MaterialCommunityIcons name={WEATHER_ICON[s.weather]} size={22} color={color.text} />
+          <T v="heading" style={{ fontSize: 15 }}>
+            {t(`weather.${s.weather}` as 'weather.clear')}
+          </T>
+          <T v="caption" style={{ color: color.gold, fontFamily: font.bold }}>
+            {t('weatherBonus', { n: mult })}
+          </T>
+        </Animated.View>
+      )}
 
       {popup && (
         <Animated.View
@@ -335,7 +463,7 @@ export default function Play() {
             tokens={progress.tokens}
             livesLeft={MAX_CONTINUES - s.continues}
             free={pro && !freeUsed.current}
-            ad={rewardedReady()}
+            ad={rewardedReady() && !adUsed.current}
             accent={theme.accent}
             active={focused}
             onBuy={() => doContinue('token')}
@@ -387,12 +515,41 @@ export default function Play() {
               </View>
 
               <View style={{ flexDirection: 'row', gap: space.sm }}>
-                <Button title={t('home')} kind="secondary" icon="home-outline" onPress={exit} style={{ flex: 1 }} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('home')}
+                  onPress={() => {
+                    tapFeedback();
+                    exit();
+                  }}
+                  style={styles.square}
+                >
+                  <Ionicons name="home-outline" size={22} color={color.text} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('share')}
+                  disabled={sharing || !bold || !semi}
+                  onPress={() => {
+                    tapFeedback();
+                    share();
+                  }}
+                  style={[styles.square, { flex: 1, flexDirection: 'row', gap: space.sm }]}
+                >
+                  {sharing ? (
+                    <ActivityIndicator color={color.text} />
+                  ) : (
+                    <>
+                      <Ionicons name="share-social-outline" size={20} color={color.text} />
+                      <T v="heading">{t('share')}</T>
+                    </>
+                  )}
+                </Pressable>
                 <Button
                   title={t('playAgain')}
                   icon="reload"
                   onPress={restart}
-                  style={{ flex: 1.4, backgroundColor: theme.accent }}
+                  style={{ flex: 1.3, backgroundColor: theme.accent, paddingHorizontal: space.md }}
                 />
               </View>
             </Glass>
@@ -535,6 +692,43 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
   },
   divider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: color.borderStrong },
+  hudWeather: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  ghostRow: { alignItems: 'center', marginTop: space.xs },
+  ghostChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    height: 26,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(11,15,26,0.5)',
+    borderWidth: 1,
+    borderColor: color.borderStrong,
+  },
+  weatherBanner: {
+    position: 'absolute',
+    top: '30%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.lg,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(11,15,26,0.7)',
+    borderWidth: 1,
+    borderColor: color.borderStrong,
+  },
+  square: {
+    height: 58,
+    minWidth: 58,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.surfaceStrong,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.borderStrong,
+  },
   quick: { flexDirection: 'row', gap: space.sm },
   quickBtn: {
     width: 56,
