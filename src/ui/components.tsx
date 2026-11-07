@@ -197,8 +197,10 @@ export function Pill({
   text,
   tint,
   label,
+  plus,
 }: {
   icon?: IconName;
+  plus?: boolean;
   coin?: boolean;
   text: string;
   tint?: string;
@@ -211,6 +213,11 @@ export function Pill({
       <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
         {text}
       </T>
+      {plus && (
+        <View style={styles.pillPlus}>
+          <Ionicons name="add" size={12} color={color.accentInk} />
+        </View>
+      )}
     </View>
   );
 }
@@ -329,6 +336,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11,15,26,0.5)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: color.borderStrong,
+  },
+  pillPlus: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    marginRight: -4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.gold,
   },
   toggle: { width: 48, height: 28, borderRadius: 14, overflow: 'hidden', justifyContent: 'center' },
   toggleOn: { backgroundColor: color.accent, borderRadius: 14 },
