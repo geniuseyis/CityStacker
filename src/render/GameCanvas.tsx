@@ -2,7 +2,7 @@ import { Canvas, Picture, Skia, type SkPicture } from '@shopify/react-native-ski
 import { useEffect, useRef } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
-import { BLOCK, STEP, VIEW_W, createGame, drop, step, type GameEvent, type GameState } from '@/engine';
+import { STEP, createGame, drop, predictOffset, step, type GameEvent, type GameState } from '@/engine';
 import { Scene } from './scene';
 import type { SkyTheme } from './themes';
 
@@ -13,6 +13,9 @@ type Props = {
   reducedMotion?: boolean;
   // ana menüdeki vitrin modu: oyunu kendi oynar
   demo?: boolean;
+  // sahne ekranın bu oranına sığdırılır (ana menü: üst kısım)
+  fit?: number;
+  fitTop?: number;
   onEvents?: (events: GameEvent[]) => void;
 };
 
@@ -22,14 +25,14 @@ const empty = (() => {
   return r.finishRecordingAsPicture();
 })();
 
-export function GameCanvas({ game, theme, paused, reducedMotion, demo, onEvents }: Props) {
+export function GameCanvas({ game, theme, paused, reducedMotion, demo, fit = 1, fitTop = 0, onEvents }: Props) {
   const { width, height } = useWindowDimensions();
   const picture = useSharedValue<SkPicture>(empty);
   const scene = useRef<Scene | null>(null);
   if (!scene.current) scene.current = new Scene(theme);
 
-  const live = useRef({ paused, onEvents, width, height, demo });
-  live.current = { paused, onEvents, width, height, demo };
+  const live = useRef({ paused, onEvents, width, height, demo, fit, fitTop });
+  live.current = { paused, onEvents, width, height, demo, fit, fitTop };
 
   useEffect(() => {
     scene.current!.setTheme(theme);
@@ -77,7 +80,14 @@ export function GameCanvas({ game, theme, paused, reducedMotion, demo, onEvents 
         scene.current!.reset();
       }
 
-      picture.value = scene.current!.render(game.current!, dt, L.width, L.height);
+      picture.value = scene.current!.render(
+        game.current!,
+        dt,
+        L.width,
+        L.height,
+        L.height * L.fit - L.fitTop,
+        L.fitTop
+      );
     };
 
     raf = requestAnimationFrame(frame);
@@ -98,13 +108,13 @@ function runBot(s: GameState, bot: { wait: number; aim: number }) {
     return;
   }
   if (bot.wait === 0) {
-    bot.wait = s.tick + 70 + Math.floor(Math.random() * 90);
-    bot.aim = Math.random() < 0.5 ? 1 : 4 + Math.random() * 8;
+    bot.wait = s.tick + 60 + Math.floor(Math.random() * 80);
+    bot.aim = Math.random() < 0.55 ? 2 : 5 + Math.random() * 9;
   }
   if (s.tick < bot.wait) return;
-  const target = s.blocks.length ? s.blocks[s.blocks.length - 1].cx : VIEW_W / 2;
-  const d = s.cur.x + BLOCK / 2 - s.camX - target;
-  if (Math.abs(d) < bot.aim) {
+  // fizikle nereye ineceğini tahmin edip bırakır
+  const d = predictOffset(s);
+  if (d !== null && Math.abs(d) < bot.aim) {
     drop(s);
     bot.wait = 0;
   }
