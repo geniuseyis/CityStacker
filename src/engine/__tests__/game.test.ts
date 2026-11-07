@@ -5,6 +5,7 @@ import {
   MAX_CONTINUES,
   STEP,
   canContinue,
+  continueCost,
   continueRun,
   createGame,
   dsin,
@@ -117,8 +118,10 @@ describe('fizik', () => {
     const miss = ev.find((e) => e.type === 'miss') as Extract<GameEvent, { type: 'miss' }>;
     expect(miss).toBeTruthy();
     expect(miss.tipped).toBe(true);
-    expect(s.lives).toBe(LIVES_MAX - 1);
     expect(s.blocks.length).toBe(2);
+    // bedava hak yok: oyun durur, devam jetonla
+    expect(s.phase).toBe('over');
+    expect(s.overReason).toBe('tipped');
   });
 
   it('merdiven gibi kayan kule, ağırlık merkezi desteği aşınca devrilir', () => {
@@ -132,19 +135,27 @@ describe('fizik', () => {
     }
     expect(toppled).toBeTruthy();
     expect(toppled!.blocks.length).toBeGreaterThanOrEqual(2);
-    expect(s.lives).toBe(LIVES_MAX - 1);
+    expect(s.phase).toBe('over');
+    expect(s.overReason).toBe('collapse');
     // kalan kule dengede
     for (let i = 1; i < s.blocks.length; i++) {
       expect(Math.abs(s.blocks[i].cx - s.blocks[i - 1].cx)).toBeLessThanOrEqual(BLOCK / 2);
     }
   });
 
-  it('üç kayıp oyunu bitirir', () => {
+  it('ıska oyunu durdurur, alınan hak kaldığı yerden sürdürür', () => {
     const s = createGame(7, 'hard');
     perfect(s);
-    for (let i = 0; i < LIVES_MAX; i++) expect(dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2)).toBe(true);
+    perfect(s);
+    expect(dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2)).toBe(true);
     expect(s.phase).toBe('over');
-    expect(s.overReason).toBe('lives');
+    expect(s.overReason).toBe('miss');
+    expect(continueCost(s)).toBe(1);
+    expect(continueRun(s)).toBe(true);
+    expect(s.phase).toBe('swinging');
+    expect(s.lives).toBe(LIVES_MAX);
+    expect(s.blocks.length).toBe(2);
+    expect(continueCost(s)).toBe(2);
   });
 
   it('devam hakkı sınırlı', () => {
