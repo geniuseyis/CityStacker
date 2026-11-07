@@ -30,6 +30,7 @@ import {
   type GameEvent,
   type GameState,
   type OverReason,
+  type Weather,
 } from '@/engine';
 import { useT } from '@/i18n';
 import { GameCanvas } from '@/render/GameCanvas';
@@ -66,7 +67,11 @@ function randomSeed() {
 export default function Play() {
   const t = useT();
   const insets = useSafeAreaInsets();
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode, auto, weather } = useLocalSearchParams<{ mode?: string; auto?: string; weather?: string }>();
+  // ekran görüntüsü modu (sadece geliştirme): vitrin botu oynar, hava seçilebilir
+  const shotMode = __DEV__ && auto === '1';
+  const shotWeather =
+    shotMode && ['clear', 'windy', 'storm', 'fog'].includes(weather ?? '') ? (weather as Weather) : undefined;
   const daily = mode === 'daily' ? todayKey() : undefined;
   const settings = useSettings();
   const progress = useProgress();
@@ -80,7 +85,7 @@ export default function Play() {
     if (daily) return createGame(dailySeed(daily), 'normal');
     // hayalet: aynı seed ve hava, aynı başlangıç koşulları
     if (ghost) return createGame(ghost.seed, ghost.difficulty, { weather: ghost.weather });
-    return createGame(randomSeed(), settings.difficulty);
+    return createGame(randomSeed(), settings.difficulty, { weather: shotWeather });
   };
   const game = useRef<GameState>(null as unknown as GameState);
   if (!game.current) game.current = newGame();
@@ -99,7 +104,7 @@ export default function Play() {
   const [sharing, setSharing] = useState(false);
   const bold = useTypeface(require('@expo-google-fonts/sora/800ExtraBold/Sora_800ExtraBold.ttf'));
   const semi = useTypeface(require('@expo-google-fonts/sora/600SemiBold/Sora_600SemiBold.ttf'));
-  const [showTutorial, setShowTutorial] = useState(!progress.tutorialDone);
+  const [showTutorial, setShowTutorial] = useState(!progress.tutorialDone && !shotMode);
   const recorded = useRef(false);
   const popId = useRef(0);
   const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -133,11 +138,23 @@ export default function Play() {
       } else if (ev.type === 'over') {
         // bedava hak yok: kayıpta önce jetonla devam teklifi, olmazsa sonuç
         const offer = !daily && canContinue(s);
-        setTimeout(() => setOver({ reason: ev.reason, stage: offer ? 'offer' : 'results' }), 450);
+        setTimeout(() => {
+          if (!offer) armResults();
+          setOver({ reason: ev.reason, stage: offer ? 'offer' : 'results' });
+        }, 450);
         if (!offer) onGameFinished();
       }
     }
     setHud({ score: s.score, floors: s.blocks.length, combo: s.combo });
+  };
+
+  // sonuç paneli, onu açan dokunuşu (Bitir'e basan parmağı) yakalamasın
+  const resultsAt = useRef(0);
+  const armResults = () => {
+    resultsAt.current = Date.now() + 500;
+  };
+  const onResults = (fn: () => void) => () => {
+    if (Date.now() >= resultsAt.current) fn();
   };
 
   const finalize = () => {
@@ -237,6 +254,7 @@ export default function Play() {
   };
 
   const toResults = () => {
+    armResults();
     setOver((o) => (o ? { ...o, stage: 'results' } : o));
     onGameFinished();
   };
@@ -293,6 +311,8 @@ export default function Play() {
           crane={crane}
           reducedMotion={settings.reducedMotion}
           guide={!daily && (settings.guide || showTutorial)}
+          demo={shotMode}
+          loop={false}
           ghost={ghost}
           onGhostFloors={setGhostFloors}
           onEvents={onEvents}
@@ -338,22 +358,19 @@ export default function Play() {
             )}
           </View>
         </View>
-
-        {ghost && (
-          <View style={styles.ghostRow} pointerEvents="none">
-            <View style={[styles.ghostChip, hud.floors > ghostFloors && { borderColor: color.mint }]}>
-              <MaterialCommunityIcons
-                name="ghost"
-                size={14}
-                color={hud.floors > ghostFloors ? color.mint : color.text}
-              />
-              <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
-                {t('ghostFloors', { n: ghostFloors })}
-              </T>
-            </View>
-          </View>
-        )}
       </View>
+
+      {/* hayalet göstergesi altta, zemin üstünde: vinç kirişine binmez */}
+      {ghost && (
+        <View style={[styles.ghostRow, { bottom: insets.bottom + space.xl }]} pointerEvents="none">
+          <View style={[styles.ghostChip, hud.floors > ghostFloors && { borderColor: color.mint }]}>
+            <MaterialCommunityIcons name="ghost" size={14} color={hud.floors > ghostFloors ? color.mint : color.text} />
+            <T v="caption" style={{ fontFamily: font.semibold, fontVariant: ['tabular-nums'] }}>
+              {t('ghostFloors', { n: ghostFloors })}
+            </T>
+          </View>
+        </View>
+      )}
 
       {intro && s.weather !== 'clear' && !over && (
         <Animated.View
@@ -520,7 +537,7 @@ export default function Play() {
                   accessibilityLabel={t('home')}
                   onPress={() => {
                     tapFeedback();
-                    exit();
+                    onResults(exit)();
                   }}
                   style={styles.square}
                 >
@@ -532,7 +549,7 @@ export default function Play() {
                   disabled={sharing || !bold || !semi}
                   onPress={() => {
                     tapFeedback();
-                    share();
+                    onResults(share)();
                   }}
                   style={styles.square}
                 >
@@ -545,7 +562,7 @@ export default function Play() {
                 <Button
                   title={t('playAgain')}
                   icon="reload"
-                  onPress={restart}
+                  onPress={onResults(restart)}
                   style={{ flex: 1, backgroundColor: theme.accent, paddingHorizontal: space.md }}
                 />
               </View>
@@ -690,15 +707,15 @@ const styles = StyleSheet.create({
   },
   divider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: color.borderStrong },
   hudWeather: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  ghostRow: { alignItems: 'center', marginTop: space.xs },
+  ghostRow: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   ghostChip: {
+    height: 30,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    height: 26,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(11,15,26,0.5)',
+    backgroundColor: 'rgba(11,15,26,0.7)',
     borderWidth: 1,
     borderColor: color.borderStrong,
   },
