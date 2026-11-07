@@ -1,36 +1,40 @@
+import { getLocales } from 'expo-localization';
 import type { ProPlan } from '@/state/schema';
-import { addTokens, setPro } from '@/state/store';
+import { addTokens, grantStarter, setPro } from '@/state/store';
 
 // Ürün kataloğu. Kimlikler App Store Connect / Play Console'da aynı adla açılacak.
-// Fiyatlar mağazadan yerel para birimiyle gelir; fallback sadece mağaza yüklenemezse.
+// Gerçek fiyat mağazadan kullanıcının para birimiyle gelir; buradakiler mağaza
+// yüklenemezse gösterilen yedek. Türkiye'ye yerel, daha düşük fiyat (docs/monetization.md).
 
-export type TokenPack = {
-  id: string;
-  tokens: number;
-  bonus?: number; // yüzde, rozet için
-  fallbackPrice: string;
-  badge?: 'popular' | 'best';
-};
+type Price = { usd: string; try: string };
 
-export type ProProduct = {
-  id: string;
-  plan: ProPlan;
-  fallbackPrice: string;
-  badge?: 'popular' | 'best';
-};
+export type TokenPack = { id: string; tokens: number; bonus?: number; price: Price; badge?: 'popular' | 'best' };
+export type ProProduct = { id: string; plan: ProPlan; price: Price; badge?: 'popular' | 'best' };
 
 export const TOKEN_PACKS: TokenPack[] = [
-  { id: 'plumbline.tokens.5', tokens: 5, fallbackPrice: '$0.99' },
-  { id: 'plumbline.tokens.15', tokens: 15, bonus: 20, fallbackPrice: '$2.49', badge: 'popular' },
-  { id: 'plumbline.tokens.40', tokens: 40, bonus: 35, fallbackPrice: '$5.99' },
-  { id: 'plumbline.tokens.100', tokens: 100, bonus: 50, fallbackPrice: '$12.99', badge: 'best' },
+  { id: 'plumbline.tokens.5', tokens: 5, price: { usd: '$0.99', try: '₺24,99' } },
+  { id: 'plumbline.tokens.15', tokens: 15, bonus: 20, price: { usd: '$2.49', try: '₺59,99' }, badge: 'popular' },
+  { id: 'plumbline.tokens.40', tokens: 40, bonus: 35, price: { usd: '$5.99', try: '₺139,99' } },
+  { id: 'plumbline.tokens.100', tokens: 100, bonus: 50, price: { usd: '$12.99', try: '₺299,99' }, badge: 'best' },
 ];
 
+// tek seferlik: 30 jeton + bakır kat stili
+export const STARTER = { id: 'plumbline.starter', price: { usd: '$1.99', try: '₺49,99' } };
+
 export const PRO_PRODUCTS: ProProduct[] = [
-  { id: 'plumbline.pro.weekly', plan: 'weekly', fallbackPrice: '$1.99' },
-  { id: 'plumbline.pro.monthly', plan: 'monthly', fallbackPrice: '$4.99', badge: 'popular' },
-  { id: 'plumbline.pro.lifetime', plan: 'lifetime', fallbackPrice: '$14.99', badge: 'best' },
+  { id: 'plumbline.pro.weekly', plan: 'weekly', price: { usd: '$1.99', try: '₺49,99' } },
+  { id: 'plumbline.pro.monthly', plan: 'monthly', price: { usd: '$4.99', try: '₺119,99' }, badge: 'popular' },
+  { id: 'plumbline.pro.lifetime', plan: 'lifetime', price: { usd: '$14.99', try: '₺349,99' }, badge: 'best' },
 ];
+
+const inTurkey = () => {
+  const l = getLocales()[0];
+  return l?.regionCode === 'TR' || l?.currencyCode === 'TRY';
+};
+
+export function priceOf(p: { price: Price }) {
+  return inTurkey() ? p.price.try : p.price.usd;
+}
 
 export type PurchaseResult = { ok: true } | { ok: false; reason: 'cancelled' | 'unavailable' | 'failed' };
 
@@ -43,16 +47,19 @@ const SIMULATE = __DEV__;
 
 export const storeAvailable = () => SIMULATE;
 
-export function priceOf(p: { fallbackPrice: string }) {
-  return p.fallbackPrice;
-}
-
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function buyTokens(pack: TokenPack): Promise<PurchaseResult> {
   if (!SIMULATE) return { ok: false, reason: 'unavailable' };
   await wait(700);
   addTokens(pack.tokens);
+  return { ok: true };
+}
+
+export async function buyStarter(): Promise<PurchaseResult> {
+  if (!SIMULATE) return { ok: false, reason: 'unavailable' };
+  await wait(700);
+  grantStarter();
   return { ok: true };
 }
 
