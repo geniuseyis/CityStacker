@@ -40,6 +40,7 @@ export function createGame(seed: number, difficulty: Difficulty): GameState {
     tick: 0,
     phase: 'swinging',
     overReason: null,
+    lastLoss: null,
     waitT: 0,
     blocks: [],
     cur: null,
@@ -146,6 +147,9 @@ export function drop(s: GameState): boolean {
 
 export const canContinue = (s: GameState) => s.phase === 'over' && s.continues < MAX_CONTINUES;
 
+// bir sonraki hakkın jeton fiyatı
+export const continueCost = (s: GameState) => s.continues + 1;
+
 // jeton ya da ödüllü reklam sonrası: bir hakla kaldığı yerden sürdür
 export function continueRun(s: GameState): boolean {
   if (!canContinue(s)) return false;
@@ -153,6 +157,7 @@ export function continueRun(s: GameState): boolean {
   s.continues += 1;
   s.lives = 1;
   s.overReason = null;
+  s.lastLoss = null;
   s.combo = 0;
   s.wob = 0;
   s.wobV = 0;
@@ -164,7 +169,8 @@ export function continueRun(s: GameState): boolean {
 
 /* ------------------------------ iniş ------------------------------ */
 
-function loseLife(s: GameState) {
+function loseLife(s: GameState, reason: OverReason) {
+  s.lastLoss = reason;
   s.lives -= 1;
   s.combo = 0;
 }
@@ -199,14 +205,14 @@ function land(s: GameState) {
     const dir = d > 0 ? 1 : -1;
     if (ad >= BLOCK) {
       // hiç değmedi, yanından düşüp gider
-      loseLife(s);
+      loseLife(s, 'miss');
       s.phase = 'falling';
       s.events.push({ type: 'miss', livesLeft: s.lives, x, y: cur.y, tipped: false });
       return;
     }
     if (ad > HALF) {
       // ağırlık merkezi kenarın dışında: kenardan devrilir
-      loseLife(s);
+      loseLife(s, 'tipped');
       s.phase = 'falling';
       cur.vy = 0;
       cur.vx = dir * 70;
@@ -285,7 +291,7 @@ function topple(s: GameState, from: number, dir: 1 | -1) {
     blocks.push({ x: blockViewX(s, i) - HALF, y: levelTop(i) + s.camY, style: bl.style, lit: bl.lit });
   }
   s.blocks.length = from;
-  loseLife(s);
+  loseLife(s, 'collapse');
   s.wobV -= dir * 30; // kopan yükün tepkisi
   s.cur = null;
   s.phase = 'settling';
@@ -342,7 +348,7 @@ export function step(s: GameState) {
     cur.x += cur.vx * dt;
     cur.y += cur.vy * dt;
     cur.rot += cur.vr * dt;
-    if (cur.y > VIEW_H + 200) afterLoss(s, 'lives');
+    if (cur.y > VIEW_H + 200) afterLoss(s, s.lastLoss ?? 'miss');
   }
 }
 

@@ -6,7 +6,8 @@ export type Phase = 'swinging' | 'dropping' | 'falling' | 'settling' | 'over';
 
 export type Grade = 'perfect' | 'good' | 'ok';
 
-export type OverReason = 'collapse' | 'lives';
+// miss: kat ıskalayıp düştü | tipped: kenardan devrildi | collapse: kule bölümü yıkıldı
+export type OverReason = 'miss' | 'tipped' | 'collapse';
 
 // cx: kule uzayında (dinlenme konumu) kat merkezi. lit: 6 pencerenin bit maskesi
 export type Block = { level: number; cx: number; style: number; lit: number };
@@ -44,6 +45,7 @@ export type GameState = {
   tick: number;
   phase: Phase;
   overReason: OverReason | null;
+  lastLoss: OverReason | null;
   waitT: number;
 
   blocks: Block[];

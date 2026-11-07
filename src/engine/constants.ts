@@ -43,8 +43,10 @@ export const CAMERA_LERP = 6;
 export const RESPAWN_DELAY = 0.7;
 
 export const COMBO_MAX = 10;
-export const LIVES_MAX = 3;
-export const MAX_CONTINUES = 2;
+// Bedava ek hak yok: her kayıpta oyun durur, jetonla hak alınarak devam edilir.
+// Hak fiyatı her seferinde bir artar (1, 2, 3...).
+export const LIVES_MAX = 1;
+export const MAX_CONTINUES = 5;
 export const BLOCK_STYLES = 4;
 
 export const DIFFICULTY: Record<Difficulty, { swing: number; wind: number; tol: number }> = {
