@@ -26,13 +26,22 @@ import {
   WOBBLE_DAMP,
   WOBBLE_FREQ,
   WOBBLE_IMPULSE,
+  WEATHER,
 } from './constants';
 import { clamp, dcos, dsin, nextRandom } from './math';
-import type { Difficulty, GameState, Grade, Hanging, OverReason, ToppledBlock } from './types';
+import type { Difficulty, GameState, Grade, Hanging, OverReason, ToppledBlock, Weather } from './types';
 
 const HALF = BLOCK / 2;
 
-export function createGame(seed: number, difficulty: Difficulty): GameState {
+// hava seed'den gelir: aynı seed her yerde aynı havayı verir (günlük kule, hayalet, replay)
+function rollWeather(r: number): Weather {
+  if (r < 0.6) return 'clear';
+  if (r < 0.8) return 'windy';
+  if (r < 0.92) return 'fog';
+  return 'storm';
+}
+
+export function createGame(seed: number, difficulty: Difficulty, opts: { weather?: Weather } = {}): GameState {
   const s: GameState = {
     seed: seed >>> 0,
     rng: seed | 0,
@@ -48,6 +57,10 @@ export function createGame(seed: number, difficulty: Difficulty): GameState {
     theta: 0,
     omega: 0,
     side: 1,
+    weather: 'clear',
+    windDir: 1,
+    gust: 0,
+    gustT: 0,
     wob: 0,
     wobV: 0,
     windT: 0,
@@ -66,6 +79,10 @@ export function createGame(seed: number, difficulty: Difficulty): GameState {
   };
   s.windT = nextRandom(s) * Math.PI * 2;
   s.side = nextRandom(s) < 0.5 ? 1 : -1;
+  const w = rollWeather(nextRandom(s));
+  s.weather = opts.weather ?? w;
+  s.windDir = nextRandom(s) < 0.5 ? 1 : -1;
+  s.gustT = 3 + nextRandom(s) * 4;
   spawn(s);
   return s;
 }
@@ -75,7 +92,13 @@ export const levelTop = (level: number) => GROUND_Y - (level + 1) * BLOCK;
 /* ------------------------------ kule ------------------------------ */
 
 // rüzgârın tepe noktasında yaptığı salınım; kule kısayken hiç yok
-const windAmp = (s: GameState) => Math.min(10, Math.max(0, s.blocks.length - 5) * 0.6) * DIFFICULTY[s.difficulty].wind;
+const windAmp = (s: GameState) => {
+  const w = WEATHER[s.weather];
+  return Math.min(10, Math.max(0, s.blocks.length - w.windFrom) * 0.6) * w.wind * DIFFICULTY[s.difficulty].wind;
+};
+
+// kata etki eden toplam yan kuvvet (ivme): sabit rüzgâr + fırtına esintisi
+const sidePush = (s: GameState) => WEATHER[s.weather].push * s.windDir + s.gust;
 
 // referans yükseklikteki (LEAN_REF kat) yatay yer değiştirme: esneme + rüzgâr
 export const towerSway = (s: GameState) => s.wob + windAmp(s) * dsin(s.windT);
@@ -249,6 +272,7 @@ function land(s: GameState) {
     points = SCORE.ok;
     grade = 'ok';
   }
+  points = Math.round(points * WEATHER[s.weather].score);
   s.score += points;
   if (s.combo > s.bestCombo) s.bestCombo = s.combo;
   s.events.push({ type: 'land', grade, combo: s.combo, points, x, y: cur.y });
@@ -313,6 +337,20 @@ export function step(s: GameState) {
   s.wob += s.wobV * dt;
   s.windT += WIND_SPEED * dt;
 
+  // fırtına: arada bir ani esinti, yavaşça söner; kuleyi de iter
+  if (WEATHER[s.weather].gusts) {
+    s.gustT -= dt;
+    if (s.gustT <= 0) {
+      s.gust += (nextRandom(s) < 0.5 ? -1 : 1) * (40 + nextRandom(s) * 50);
+      s.gustT = 3 + nextRandom(s) * 4;
+    }
+  }
+  if (s.gust !== 0) {
+    s.wobV += s.gust * 0.5 * dt;
+    s.gust *= 1 - Math.min(1, dt * 1.5);
+    if (Math.abs(s.gust) < 0.05) s.gust = 0;
+  }
+
   // kamera sadece kat havada değilken kayar, iniş noktası sabit kalsın
   if (s.phase === 'swinging' || s.phase === 'settling') {
     const k = Math.min(1, dt * CAMERA_LERP);
@@ -331,10 +369,12 @@ export function step(s: GameState) {
 
   if (s.phase === 'swinging') {
     // sarkaç: θ'' = -(g/L)·sin θ (yarı-örtük euler, enerji korunur)
-    s.omega += -(GRAVITY / s.rope) * dsin(s.theta) * dt;
+    // yan rüzgâr ipe dik bileşeniyle sarkacı iter: θ'' = (-g·sin θ + a·cos θ) / L
+    s.omega += ((-GRAVITY * dsin(s.theta) + sidePush(s) * dcos(s.theta)) / s.rope) * dt;
     s.theta += s.omega * dt;
     hangPosition(s, cur);
   } else if (s.phase === 'dropping') {
+    cur.vx += sidePush(s) * dt;
     cur.vy += GRAVITY * dt;
     cur.x += cur.vx * dt;
     cur.y += cur.vy * dt;
@@ -344,6 +384,7 @@ export function step(s: GameState) {
       land(s);
     }
   } else if (s.phase === 'falling') {
+    cur.vx += sidePush(s) * dt;
     cur.vy += GRAVITY * dt;
     cur.x += cur.vx * dt;
     cur.y += cur.vy * dt;
@@ -363,11 +404,18 @@ export function predictOffset(s: GameState): number | null {
   let wob = s.wob;
   let wobV = s.wobV;
   let windT = s.windT;
+  let gust = s.gust;
+  const push = WEATHER[s.weather].push * s.windDir;
   const target = topSurface(s, s.camY) - BLOCK;
   for (let i = 0; i < 1200; i++) {
     wobV += (-w * w * wob - 2 * WOBBLE_DAMP * w * wobV) * dt;
     wob += wobV * dt;
     windT += WIND_SPEED * dt;
+    if (gust !== 0) {
+      wobV += gust * 0.5 * dt;
+      gust *= 1 - Math.min(1, dt * 1.5);
+    }
+    vx += (push + gust) * dt;
     vy += GRAVITY * dt;
     x += vx * dt;
     y += vy * dt;
