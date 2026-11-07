@@ -85,6 +85,17 @@ export default function RootLayout() {
               animation: 'slide_from_bottom',
             }}
           />
+          <Stack.Screen
+            name="shop"
+            options={{
+              presentation: 'formSheet',
+              sheetAllowedDetents: [0.92],
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 28,
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen name="pro" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

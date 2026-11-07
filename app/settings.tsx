@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import type { ComponentProps, ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -9,7 +10,8 @@ import { useT } from '@/i18n';
 import { ThemePreview } from '@/render/ThemePreview';
 import { THEMES, isUnlocked, type SkyTheme } from '@/render/themes';
 import { tapFeedback } from '@/services/feedback';
-import { resetProgress, updateSettings, useProgress, useSettings } from '@/state/store';
+import { restorePurchases } from '@/services/purchases';
+import { resetProgress, updateSettings, useIsPro, useProgress, useSettings } from '@/state/store';
 import { IconButton, Press, Segmented, T, Toggle } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
@@ -19,6 +21,7 @@ export default function SettingsScreen() {
   const t = useT();
   const s = useSettings();
   const p = useProgress();
+  const pro = useIsPro();
   const insets = useSafeAreaInsets();
   const active = THEMES.find((th) => th.key === s.theme) ?? THEMES[0];
 
@@ -27,6 +30,11 @@ export default function SettingsScreen() {
       { text: t('cancel'), style: 'cancel' },
       { text: t('confirm'), style: 'destructive', onPress: resetProgress },
     ]);
+
+  const restore = async () => {
+    const r = await restorePurchases();
+    Alert.alert(t('restore'), r.ok ? (r.restored ? t('thanks') : t('restoredNone')) : t('purchaseUnavailable'));
+  };
 
   const diffs: { key: Difficulty; icon: IconName }[] = [
     { key: 'easy', icon: 'leaf-outline' },
@@ -45,6 +53,31 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl, gap: space.xl }}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.pad}>
+          <Press label={t('pro')} onPress={() => router.push('/pro')} style={styles.proCard}>
+            <LinearGradient
+              colors={['#3A2A12', '#1C1530']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.gem}>
+              <Ionicons name="diamond" size={18} color="#2A1A05" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T v="heading">{t('pro')}</T>
+              <T v="caption" muted>
+                {pro ? t('proActive') : t('proBanner')}
+              </T>
+            </View>
+            <Ionicons
+              name={pro ? 'checkmark-circle' : 'chevron-forward'}
+              size={20}
+              color={pro ? color.gold : color.textMuted}
+            />
+          </Press>
+        </View>
+
         <Section title={t('theme')} hint={t(`theme.${active.key}` as 'theme.dusk')}>
           <ScrollView
             horizontal
@@ -57,6 +90,7 @@ export default function SettingsScreen() {
                 theme={th}
                 selected={s.theme === th.key}
                 bestFloors={p.bestFloors}
+                pro={pro}
                 label={t(`theme.${th.key}` as 'theme.dusk')}
                 lockLabel={t('floorsLeft', { n: Math.max(0, th.unlockFloors - p.bestFloors) })}
                 selectedLabel={t('selected')}
@@ -159,7 +193,13 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <View style={styles.pad}>
+        <View style={[styles.pad, { gap: space.sm }]}>
+          <Press label={t('restore')} onPress={restore} style={styles.restore}>
+            <Ionicons name="refresh" size={18} color={color.textMuted} />
+            <T v="heading" style={{ fontSize: 15, color: color.textMuted }}>
+              {t('restore')}
+            </T>
+          </Press>
           <Press label={t('resetStats')} onPress={confirmReset} style={styles.danger}>
             <Ionicons name="refresh-circle-outline" size={20} color={color.danger} />
             <T v="heading" style={{ color: color.danger, fontSize: 15 }}>
@@ -188,6 +228,7 @@ function ThemeCard({
   theme,
   selected,
   bestFloors,
+  pro,
   label,
   lockLabel,
   selectedLabel,
@@ -197,13 +238,14 @@ function ThemeCard({
   theme: SkyTheme;
   selected: boolean;
   bestFloors: number;
+  pro: boolean;
   label: string;
   lockLabel: string;
   selectedLabel: string;
   openLabel: string;
   onPress: () => void;
 }) {
-  const open = isUnlocked(theme, bestFloors);
+  const open = pro || isUnlocked(theme, bestFloors);
   const progress = theme.unlockFloors ? Math.min(1, bestFloors / theme.unlockFloors) : 1;
   return (
     <Press
@@ -391,6 +433,33 @@ const styles = StyleSheet.create({
     gap: space.md,
     alignItems: 'flex-start',
     padding: space.lg,
+    borderRadius: radius.lg,
+    backgroundColor: color.surface,
+  },
+  proCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.lg,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,193,94,0.35)',
+  },
+  gem: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.gold,
+  },
+  restore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    height: 52,
     borderRadius: radius.lg,
     backgroundColor: color.surface,
   },

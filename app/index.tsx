@@ -11,7 +11,7 @@ import { useT } from '@/i18n';
 import { GameCanvas } from '@/render/GameCanvas';
 import { getTheme } from '@/render/themes';
 import { todayKey } from '@/state/daily';
-import { useProgress, useSettings } from '@/state/store';
+import { useIsPro, useProgress, useSettings } from '@/state/store';
 import { Button, IconButton, Pill, Press, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
@@ -22,6 +22,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const settings = useSettings();
   const progress = useProgress();
+  const pro = useIsPro();
   const theme = getTheme(settings.theme);
   const game = useRef<GameState>(createGame(20261106, 'normal'));
   const [mode, setMode] = useState<Mode>('endless');
@@ -62,8 +63,22 @@ export default function Home() {
       />
 
       <View style={[styles.top, { paddingTop: insets.top + space.sm }]}>
-        <Pill coin text={fmt(progress.tokens)} label={`${fmt(progress.tokens)} ${t('tokens')}`} />
+        <Press label={`${fmt(progress.tokens)} ${t('tokens')}`} onPress={() => router.push('/shop')}>
+          <Pill coin text={fmt(progress.tokens)} plus />
+        </Press>
         <View style={{ flexDirection: 'row', gap: space.sm }}>
+          {pro ? (
+            <View style={styles.proBadge} accessibilityLabel={t('proActive')}>
+              <Ionicons name="diamond" size={12} color="#2A1A05" />
+              <T v="caption" style={{ color: '#2A1A05', fontFamily: font.black, letterSpacing: 0.6 }}>
+                PRO
+              </T>
+            </View>
+          ) : (
+            <Press label={t('pro')} onPress={() => router.push('/pro')} style={styles.proBtn}>
+              <Ionicons name="diamond" size={18} color={color.gold} />
+            </Press>
+          )}
           <IconButton icon="trophy-outline" label={t('records')} onPress={() => router.push('/records')} />
           <IconButton icon="settings-outline" label={t('settings')} onPress={() => router.push('/settings')} />
         </View>
@@ -150,6 +165,26 @@ function ModeCard({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
+  proBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(11,15,26,0.45)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,193,94,0.5)',
+  },
+  proBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    height: 28,
+    alignSelf: 'center',
+    borderRadius: 14,
+    backgroundColor: color.gold,
+  },
   scrim: { ...StyleSheet.absoluteFill, top: '52%' },
   top: {
     position: 'absolute',
