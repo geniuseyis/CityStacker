@@ -1,51 +1,56 @@
-# 🏗️ City Stacker
+# CityStacker
 
-React Native + Expo ile geliştirilmiş retro kule istifleme oyunu. Vinçte sallanan bloğu doğru anda bırak, kuleni olabildiğince yükselt!
+Vinçte sallanan katı doğru anda bırak, kuleni olabildiğince yükselt. iOS ve Android için React Native + Expo ile yazıldı.
 
-## 🎮 Oynanış
+## Oynanış
 
-- Vinç halatında sarkaç gibi salınan bloğu **tek dokunuşla** bırak.
-- Alttaki bloğa ne kadar hizalı bırakırsan o kadar çok puan: **MÜKEMMEL / İYİ / normal**.
-- Üst üste hizalı bırakışlar **kombo** oluşturur — kombo arttıkça halat hızlanır, puan çarpanı büyür.
-- Kaçık bırakılan bloklar kuleyi yamultur; taban ile tepe arasındaki kayma sınırı aşarsa **kule devrilir**.
-- **3 blok hakkın** var: ıskalanan her blok bir can götürür.
-- Kule yükseldikçe sallanır, kamera tepeyi takip eder.
+- Tek dokunuşla bırak. Alttaki kata ne kadar hizalıysa o kadar puan: **Mükemmel / İyi / normal**
+- Üst üste hizalı bırakışlar kombo yapar, kombo arttıkça vinç hızlanır
+- Kaçık katlar kuleyi yamultur, kayma sınırı aşılırsa kule yıkılır
+- 3 hak var, ıskalanan her kat bir hak götürür
+- Jetonla kaldığın yerden devam edebilirsin (oyun başına en fazla 2 kez)
 
-## ✨ Özellikler
+### Modlar
 
-- 🎨 4 tema: Gündüz, Gece, Gün Batımı, Neon
-- 🏆 Cihaz içi lider tablosu (ilk 25 skor) ve rekor takibi
-- ⚡ Kombo çubuğu + dinamik halat hızı sistemi
-- ❤️ 3 can sistemi
-- 📳 Haptik geri bildirim, ses efektleri ve müzik (ayrı ayrı açılıp kapanabilir)
-- 🎚️ 3 zorluk seviyesi: Kolay / Normal / Zor
-- 🎉 Parçacık efektleri (konfeti, toz), ekran sarsıntısı, flaş
-- 📴 Tamamen çevrimdışı — hiçbir veri toplanmaz, ağ izni yok
+- **Sonsuz:** kolay / normal / zor
+- **Günün Kulesi:** her gün herkes için aynı kule (aynı seed)
 
-## 🛠️ Teknolojiler
+## Teknik
 
-| Katman | Teknoloji |
+| | |
 | --- | --- |
-| Framework | React Native 0.81 + Expo SDK 54 |
-| Dil | TypeScript |
-| Oyun döngüsü | `requestAnimationFrame` tabanlı özel fizik (sarkaç, yerçekimi, kamera lerp) |
-| Ses | expo-audio |
-| Depolama | AsyncStorage |
-| Build | EAS Build (APK / AAB) |
+| Uygulama | Expo SDK 58, React Native 0.88, TypeScript (strict), expo-router |
+| Çizim | @shopify/react-native-skia — her kare tek bir `SkPicture`, bloklar ve arka plan önbellekli |
+| Motor | `src/engine` — saf TS, React'ten bağımsız, 1/120 sn sabit adım |
+| Depolama | react-native-mmkv (AES-256), anahtar Keychain / Keystore'da |
+| Test | vitest (`npm test`) |
 
-Oyun motoru kullanılmadı; sarkaç fiziği, çarpışma toleransı, kombo-hız sistemi ve kamera takibi sıfırdan yazıldı.
+### Motor
 
-## 🚀 Çalıştırma
+Fizik ekran boyutundan bağımsız, 390×844'lük sanal bir alanda çalışıyor. Renderer bunu cihaza ölçekliyor, yani tablet ve telefonda oyun aynı.
+
+Oyun deterministik: aynı seed ve aynı girdiler (bırakma anları) her zaman aynı skoru verir. `Math.sin` motorlar arasında son basamakta farklı sonuç verebildiği için kendi `dsin` fonksiyonumuzu kullanıyoruz. Bu sayede bir oyun kaydı (`RunRecord`) başka bir cihazda ya da sunucuda baştan oynatılıp skor doğrulanabiliyor (`verify`).
+
+### Güvenlik
+
+- Ağ izni gerektiren bir özellik yok, kişisel veri toplanmıyor
+- Kayıtlar şifreli; diskten gelen veri tip ve sınır kontrolünden geçiyor (`src/state/schema.ts`)
+- Android yedekleme kapalı (`allowBackup: false`), kayıt dosyası adb ile çekilemiyor
+- Bağımlılıklarda `npm audit` temiz
+
+## Çalıştırma
+
+Native modüller (MMKV, Skia) olduğu için Expo Go yerine development build gerekiyor.
 
 ```bash
 npm install
-npx expo start
+npx expo run:android      # ya da run:ios (macOS)
+npm test
+npm run typecheck
 ```
 
-Expo Go ile QR kodu okutarak cihazda test edebilirsin.
-
-### Üretim derlemesi
+Mağaza derlemesi:
 
 ```bash
-npx eas build --platform android --profile production
+npx eas build --platform all --profile production
 ```
