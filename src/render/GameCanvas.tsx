@@ -4,13 +4,15 @@ import { StyleSheet, useWindowDimensions } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   STEP,
-  continueRun,
   createGame,
   drop,
+  makeGhost,
   predictOffset,
   step,
+  stepGhost,
   type GameEvent,
   type GameState,
+  type Ghost,
   type RunRecord,
 } from '@/engine';
 import { Scene } from './scene';
@@ -41,24 +43,6 @@ const empty = (() => {
   r.beginRecording(Skia.XYWHRect(0, 0, 1, 1));
   return r.finishRecordingAsPicture();
 })();
-
-type Ghost = { s: GameState; rec: RunRecord; i: number; floors: number };
-
-function makeGhost(rec: RunRecord): Ghost {
-  return { s: createGame(rec.seed, rec.difficulty, { weather: rec.weather }), rec, i: 0, floors: 0 };
-}
-
-// hayaleti bir adım ilerlet: o adımdaki girdileri uygula, sonra adımla (replay ile aynı sıra)
-function stepGhost(g: Ghost) {
-  const { s, rec } = g;
-  while (g.i < rec.inputs.length && rec.inputs[g.i].tick === s.tick) {
-    const inp = rec.inputs[g.i++];
-    if (inp.kind === 'drop') drop(s);
-    else continueRun(s);
-  }
-  step(s);
-  s.events.length = 0;
-}
 
 export function GameCanvas({
   game,
@@ -105,6 +89,7 @@ export function GameCanvas({
     let acc = 0;
     const bot = { wait: 0, aim: 0 };
     let ghostRun: Ghost | null = null;
+    let ghostFloors = -1;
     let lastGame: GameState | null = null;
 
     const frame = (now: number) => {
@@ -122,7 +107,7 @@ export function GameCanvas({
       if (s !== lastGame) {
         lastGame = s;
         ghostRun = L.ghost ? makeGhost(L.ghost) : null;
-        if (ghostRun) L.onGhostFloors?.(0);
+        ghostFloors = -1;
       }
 
       acc += dt;
@@ -136,9 +121,9 @@ export function GameCanvas({
       }
       if (n === 12) acc = 0;
 
-      if (ghostRun && ghostRun.s.blocks.length !== ghostRun.floors) {
-        ghostRun.floors = ghostRun.s.blocks.length;
-        L.onGhostFloors?.(ghostRun.floors);
+      if (ghostRun && ghostRun.s.blocks.length !== ghostFloors) {
+        ghostFloors = ghostRun.s.blocks.length;
+        L.onGhostFloors?.(ghostFloors);
       }
 
       if (s.events.length) {

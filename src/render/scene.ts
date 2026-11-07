@@ -534,6 +534,14 @@ export class Scene {
       p.setShader(null);
     }
 
+    // fırtına: arka plan ve zemin de kararır (kule hariç)
+    if (s.weather === 'storm') {
+      p.setColor(C('#0A0C1C'));
+      p.setAlphaf(0.3);
+      c.drawRect(R(-SPAN, -400, VIEW_W + SPAN * 2, VIEW_H + 800 + below), p);
+      p.setAlphaf(1);
+    }
+
     if (ghost) this.drawGhost(c, s, ghost);
 
     // kule: katlar düz durur, sadece esneme kadar kayar. Eğilen bir kirişte
