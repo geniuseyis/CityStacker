@@ -1,4 +1,4 @@
-# CityStacker
+# Plumbline
 
 Vinçte sallanan katı doğru anda bırak, kuleni olabildiğince yükselt. iOS ve Android için React Native + Expo ile yazıldı.
 

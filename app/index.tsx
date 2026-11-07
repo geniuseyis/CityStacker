@@ -39,7 +39,7 @@ export default function Home() {
   const dailyBest = progress.daily?.date === today ? progress.daily.best : 0;
   const best = progress.best[settings.difficulty];
   const fmt = (n: number) => n.toLocaleString(t.locale);
-  const name = Constants.expoConfig?.name ?? 'CityStacker';
+  const name = Constants.expoConfig?.name ?? 'Plumbline';
 
   return (
     <View style={styles.root}>
