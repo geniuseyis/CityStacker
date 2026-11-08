@@ -25,4 +25,11 @@ describe('replay', () => {
     expect(r.inputs).not.toBe(s.inputs);
     expect(r.inputs).toEqual(s.inputs);
   });
+
+  it('kayit kat sayisini ve puani tasir', () => {
+    const s = play(13);
+    const r = toRecord(s);
+    expect(r.floors).toBe(s.blocks.length);
+    expect(r.score).toBe(s.score);
+  });
 });
