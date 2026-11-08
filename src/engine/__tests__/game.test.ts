@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   BLOCK,
+  COMBO_TIME,
   LIVES_MAX,
   MAX_CONTINUES,
+  PERFECT_TOL,
   STEP,
   canContinue,
   continueCost,
@@ -59,6 +61,31 @@ describe('math', () => {
   });
 });
 
+describe('denge', () => {
+  it('hep aynı yöne kaçan mükemmel inişler kuleyi yıkmaz, kat tam oturur', () => {
+    const s = createGame(21, 'normal', CLEAR);
+    perfect(s);
+    for (let i = 0; i < 20; i++) {
+      expect(dropWhen(s, (d) => d > 3 && d < PERFECT_TOL - 1)).toBe(true);
+    }
+    expect(s.phase).not.toBe('over');
+    expect(s.perfects).toBeGreaterThanOrEqual(20);
+    expect(new Set(s.blocks.map((b) => b.cx)).size).toBe(1);
+  });
+
+  it('aynı yöne kaçan katlar kuleyi yıkmaz: her kat yalnızca alttakine bakar', () => {
+    const s = createGame(22, 'normal', CLEAR);
+    perfect(s);
+    for (let i = 0; i < 12; i++) {
+      expect(dropWhen(s, (d) => d > 19 && d < 30)).toBe(true);
+      expect(s.phase).toBe('swinging');
+    }
+    expect(s.blocks.length).toBe(13);
+    // kule gerçekten merdiven gibi kaydı
+    expect(s.blocks[12].cx - s.blocks[0].cx).toBeGreaterThan(BLOCK * 2);
+  });
+});
+
 describe('fizik', () => {
   it('sarkaç enerjiyi korur, genlik sabit kalır', () => {
     const s = createGame(1, 'normal', CLEAR);
@@ -112,7 +139,7 @@ describe('fizik', () => {
     for (let i = 1; i < 12; i++) expect(Math.abs(s.blocks[i].cx - s.blocks[i - 1].cx)).toBeLessThan(1.5);
   });
 
-  it('ağırlık merkezi kenarı aşan kat devrilir ve hak götürür', () => {
+  it('merkezi alttaki katın kenarını aşan kat devrilir ve hak götürür', () => {
     const s = createGame(5, 'hard', CLEAR);
     perfect(s);
     perfect(s);
@@ -122,49 +149,60 @@ describe('fizik', () => {
     const miss = ev.find((e) => e.type === 'miss') as Extract<GameEvent, { type: 'miss' }>;
     expect(miss).toBeTruthy();
     expect(miss.tipped).toBe(true);
-    expect(s.blocks.length).toBe(2);
-    // bedava hak yok: oyun durur, devam jetonla
-    expect(s.phase).toBe('over');
-    expect(s.overReason).toBe('tipped');
+    // düz kulede tepeden bir kat kopar, en az bir kat hep kalır
+    expect(ev.some((e) => e.type === 'knock')).toBe(true);
+    expect(s.blocks.length).toBe(1);
+    // bir kalp gider, oyun sürer
+    expect(s.lives).toBe(LIVES_MAX - 1);
+    expect(s.phase).toBe('swinging');
   });
 
-  it('merdiven gibi kayan kule, ağırlık merkezi desteği aşınca devrilir', () => {
-    const s = createGame(6, 'hard', CLEAR);
+  it('tepe zaten kaçıksa kenardan düşen kat iki kat götürür', () => {
+    const s = createGame(41, 'hard', CLEAR);
+    perfect(s);
+    perfect(s);
+    perfect(s);
+    expect(dropWhen(s, (d) => d > 20 && d < 30)).toBe(true);
+    events(s);
+    expect(s.blocks.length).toBe(4);
+    expect(dropWhen(s, (d) => Math.abs(d) > BLOCK / 2 + 4 && Math.abs(d) < BLOCK - 6)).toBe(true);
+    const knock = events(s).find((e) => e.type === 'knock') as Extract<GameEvent, { type: 'knock' }>;
+    expect(knock.blocks.length).toBe(2);
+    expect(s.blocks.length).toBe(2);
+  });
+
+  it('tek katlı kulede kenardan düşen kat alttakine dokunmaz', () => {
+    const s = createGame(42, 'hard', CLEAR);
     perfect(s);
     events(s);
-    let toppled: Extract<GameEvent, { type: 'topple' }> | undefined;
-    for (let g = 0; g < 6 && !toppled; g++) {
-      expect(dropWhen(s, (d) => d > 22 && d < 28)).toBe(true);
-      toppled = events(s).find((e) => e.type === 'topple') as typeof toppled;
-    }
-    expect(toppled).toBeTruthy();
-    expect(toppled!.blocks.length).toBeGreaterThanOrEqual(2);
-    expect(s.phase).toBe('over');
-    expect(s.overReason).toBe('collapse');
-    // kalan kule dengede
-    for (let i = 1; i < s.blocks.length; i++) {
-      expect(Math.abs(s.blocks[i].cx - s.blocks[i - 1].cx)).toBeLessThanOrEqual(BLOCK / 2);
-    }
+    expect(dropWhen(s, (d) => Math.abs(d) > BLOCK / 2 + 2)).toBe(true);
+    expect(events(s).some((e) => e.type === 'knock')).toBe(false);
+    expect(s.blocks.length).toBe(1);
   });
 
-  it('ıska oyunu durdurur, alınan hak kaldığı yerden sürdürür', () => {
+  it('kalpler bitince oyun durur, alınan hak kaldığı yerden sürdürür', () => {
     const s = createGame(7, 'hard', CLEAR);
-    perfect(s);
-    perfect(s);
-    expect(dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2)).toBe(true);
+    // alçak kulede salınım katı tamamen ıskalatacak kadar geniş değil
+    for (let i = 0; i < 16; i++) perfect(s);
+    for (let left = LIVES_MAX - 1; left >= 0; left--) {
+      expect(dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2)).toBe(true);
+      expect(s.lives).toBe(left);
+    }
     expect(s.phase).toBe('over');
     expect(s.overReason).toBe('miss');
     expect(continueCost(s)).toBe(1);
     expect(continueRun(s)).toBe(true);
     expect(s.phase).toBe('swinging');
-    expect(s.lives).toBe(LIVES_MAX);
-    expect(s.blocks.length).toBe(2);
+    // jetonla devam tek kalp verir
+    expect(s.lives).toBe(1);
+    expect(s.blocks.length).toBe(16);
     expect(continueCost(s)).toBe(2);
   });
 
   it('devam hakkı sınırlı', () => {
     const s = createGame(9, 'hard', CLEAR);
-    perfect(s);
+    // alçak kulede salınım katı tamamen ıskalatacak kadar geniş değil
+    for (let i = 0; i < 16; i++) perfect(s);
     for (let c = 0; c <= MAX_CONTINUES; c++) {
       for (let g = 0; g < 5 && s.phase !== 'over'; g++) dropWhen(s, (d) => Math.abs(d) >= BLOCK + 2);
       expect(s.phase).toBe('over');
@@ -172,6 +210,27 @@ describe('fizik', () => {
     }
     expect(canContinue(s)).toBe(false);
     expect(continueRun(s)).toBe(false);
+  });
+
+  it('kombo sayacı dolar, süre bitince kombo sıfırlanır', () => {
+    const s = createGame(31, 'normal', CLEAR);
+    perfect(s);
+    perfect(s);
+    expect(s.combo).toBe(2);
+    expect(s.comboT).toBeGreaterThan(COMBO_TIME - 1);
+    for (let i = 0; i < 120 * (COMBO_TIME + 1); i++) step(s);
+    expect(s.comboT).toBe(0);
+    expect(s.combo).toBe(0);
+  });
+
+  it('hızlı yerleşen kat daha çok puan alır', () => {
+    const landPoints = (wait: number) => {
+      const s = createGame(32, 'normal', CLEAR);
+      for (let i = 0; i < wait; i++) step(s);
+      perfect(s);
+      return (s.events.find((e) => e.type === 'land') as Extract<GameEvent, { type: 'land' }>).points;
+    };
+    expect(landPoints(0)).toBeGreaterThan(landPoints(120 * 6));
   });
 
   it('rüzgâr düşen katı esme yönüne iter', () => {
