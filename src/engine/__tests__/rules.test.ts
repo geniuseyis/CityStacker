@@ -126,4 +126,8 @@ describe('motor kurallari', () => {
     expect(DIFFICULTY.easy.tol).toBeGreaterThan(DIFFICULTY.normal.tol);
     expect(DIFFICULTY.normal.tol).toBeGreaterThan(DIFFICULTY.hard.tol);
   });
+
+  it('zorluk arttikca salinim hizlanir', () => {
+    expect(DIFFICULTY.hard.swing).toBeGreaterThan(DIFFICULTY.easy.swing);
+  });
 });
