@@ -26,4 +26,11 @@ describe('gorevler', () => {
     const days = Array.from({ length: 10 }, (_, i) => JSON.stringify(missionsFor(`2026-11-0${i}`)));
     expect(new Set(days).size).toBeGreaterThan(1);
   });
+
+  it('bir gunde ayni tur iki kez gelmez', () => {
+    for (let d = 10; d < 30; d++) {
+      const kinds = missionsFor(`2026-11-${d}`).map((x) => x.kind);
+      expect(new Set(kinds).size).toBe(3);
+    }
+  });
 });
