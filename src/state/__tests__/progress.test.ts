@@ -79,4 +79,8 @@ describe('parseProgress', () => {
   it('gunluk rekor okunur', () => {
     expect(parseProgress({ daily: { date: '2026-11-08', best: 4 } }).daily).toEqual({ date: '2026-11-08', best: 4 });
   });
+
+  it('sahip olunanlarda gecersiz kimlikler atilir', () => {
+    expect(parseProgress({ owned: ['skin.glass', 'SKIN', 3, '../x'] }).owned).toEqual(['skin.glass']);
+  });
 });
