@@ -71,4 +71,8 @@ describe('parseProgress', () => {
   it('gecerli gunluk tarih korunur', () => {
     expect(parseProgress({ runs: [{ daily: '2026-11-08' }] }).runs[0].daily).toBe('2026-11-08');
   });
+
+  it('gunluk rekor tarihi bozuksa silinir', () => {
+    expect(parseProgress({ daily: { date: 'dun', best: 4 } }).daily).toBeNull();
+  });
 });
