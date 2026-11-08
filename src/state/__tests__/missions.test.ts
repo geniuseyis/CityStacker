@@ -17,4 +17,8 @@ describe('gorevler', () => {
   it('her gun 3 gorev cikar', () => {
     expect(missionsFor('2026-11-08')).toHaveLength(3);
   });
+
+  it('ayni gun ayni gorevler', () => {
+    expect(missionsFor('2026-11-08')).toEqual(missionsFor('2026-11-08'));
+  });
 });
