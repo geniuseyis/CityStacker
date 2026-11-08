@@ -6,4 +6,8 @@ describe('renk yardimcilari', () => {
     expect(mix('#102030', '#405060', 0)).toBe('#102030');
     expect(mix('#102030', '#405060', 1)).toBe('#405060');
   });
+
+  it('mix ortada yarilar', () => {
+    expect(mix('#000000', '#ffffff', 0.5)).toBe('#808080');
+  });
 });
