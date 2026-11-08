@@ -27,4 +27,9 @@ describe('parseRecord', () => {
   it('liste olmayan girdiler reddedilir', () => {
     expect(parseRecord(rec({ inputs: 'x' }))).toBeNull();
   });
+
+  it('cok uzun kayit reddedilir', () => {
+    const inputs = Array.from({ length: 3001 }, (_, i) => ({ tick: i, kind: 'drop' }));
+    expect(parseRecord(rec({ inputs }))).toBeNull();
+  });
 });
