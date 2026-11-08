@@ -75,4 +75,9 @@ describe('gorevler', () => {
     expect(advance(m('weatherFloors'), 0, run({ floors: 8, weather: 'windy' }))).toBe(8);
     expect(advance(m('weatherFloors'), 0, run({ floors: 9, weather: 'storm' }))).toBe(9);
   });
+
+  it('hava gorevi acik havada ilerlemez', () => {
+    expect(advance(m('weatherFloors'), 3, run({ floors: 20, weather: 'clear' }))).toBe(3);
+    expect(advance(m('weatherFloors'), 3, run({ floors: 20, weather: 'fog' }))).toBe(3);
+  });
 });
