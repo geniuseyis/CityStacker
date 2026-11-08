@@ -7,7 +7,7 @@ export const VIEW_H = 844;
 
 export const STEP = 1 / 120;
 
-export const BLOCK = 64;
+export const BLOCK = 76;
 export const GROUND_H = 108;
 export const GROUND_Y = VIEW_H - GROUND_H;
 
@@ -36,16 +36,19 @@ export const WOBBLE_IMPULSE = 2.2; // birim/sn, kaçıklık başına
 export const WIND_SPEED = 1.2;
 
 // isabet toleransları (birim, kat merkezleri arası)
-export const PERFECT_TOL = 7;
-export const GOOD_TOL = 18;
+export const PERFECT_TOL = 9;
+export const GOOD_TOL = 22;
 
 export const CAMERA_LERP = 6;
-export const RESPAWN_DELAY = 0.7;
 
 export const COMBO_MAX = 10;
-// Bedava ek hak yok: her kayıpta oyun durur, jetonla hak alınarak devam edilir.
-// Hak fiyatı her seferinde bir artar (1, 2, 3...).
-export const LIVES_MAX = 1;
+// kombo sayacı (sn): isabetli iniş doldurur, bitince kombo sıfırlanır
+export const COMBO_TIME = 6;
+// hız bonusu: kat vinçte belirdikten sonra bu sürede yerleşirse (sn) azalarak verilir
+export const SPEED_WINDOW = 4;
+// Oyun 3 hakla başlar. Haklar bitince oyun durur, jetonla devam edilir.
+// Devam fiyatı her seferinde bir artar (1, 2, 3...).
+export const LIVES_MAX = 3;
 export const MAX_CONTINUES = 5;
 export const BLOCK_STYLES = 4;
 
@@ -71,4 +74,5 @@ export const SCORE = {
   goodBase: 40,
   goodPerCombo: 8,
   ok: 15,
+  speedMax: 60,
 };
