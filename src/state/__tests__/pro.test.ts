@@ -19,4 +19,8 @@ describe('Pro kaydi', () => {
   it('sonsuz bitis tarihi kabul edilmez', () => {
     expect(pro({ plan: 'monthly', until: Infinity })).toEqual({ plan: 'monthly', until: 0 });
   });
+
+  it('kayit yoksa pro aktif degil', () => {
+    expect(isProActive(null)).toBe(false);
+  });
 });
