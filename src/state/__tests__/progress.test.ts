@@ -112,4 +112,8 @@ describe('parseProgress', () => {
   it('reklam jetonu sayaci 100u asamaz', () => {
     expect(parseProgress({ adTokens: { date: '2026-11-08', count: 500 } }).adTokens?.count).toBe(100);
   });
+
+  it('reklam jetonu tarihi bozuksa silinir', () => {
+    expect(parseProgress({ adTokens: { date: 3, count: 1 } }).adTokens).toBeNull();
+  });
 });
