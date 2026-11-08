@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import type { ComponentProps, ReactNode } from 'react';
+import { useRef, type ComponentProps, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Difficulty } from '@/engine';
@@ -12,7 +12,7 @@ import { THEMES, isUnlocked, type SkyTheme } from '@/render/themes';
 import { tapFeedback } from '@/services/feedback';
 import { restorePurchases } from '@/services/purchases';
 import { resetProgress, updateSettings, useIsPro, useProgress, useSettings } from '@/state/store';
-import { IconButton, Press, Segmented, T, Toggle } from '@/ui/components';
+import { Button, IconButton, Press, Segmented, T, Toggle } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -24,6 +24,33 @@ export default function SettingsScreen() {
   const pro = useIsPro();
   const insets = useSafeAreaInsets();
   const active = THEMES.find((th) => th.key === s.theme) ?? THEMES[0];
+
+  // ayarlar anında uygulanır; X ile çıkarken ekrana girildiği hale dönülebilsin
+  const initial = useRef(s);
+
+  const saveAndExit = () => {
+    tapFeedback();
+    router.back();
+  };
+
+  const close = () => {
+    if (JSON.stringify(s) === JSON.stringify(initial.current)) {
+      router.back();
+      return;
+    }
+    Alert.alert(t('unsavedTitle'), t('unsavedBody'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('discard'),
+        style: 'destructive',
+        onPress: () => {
+          updateSettings(initial.current);
+          router.back();
+        },
+      },
+      { text: t('save'), onPress: () => router.back() },
+    ]);
+  };
 
   const confirmReset = () =>
     Alert.alert(t('resetStats'), t('resetConfirm'), [
@@ -43,10 +70,10 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <T v="title">{t('settings')}</T>
-        <IconButton icon="close" label={t('back')} size={38} onPress={() => router.back()} />
+        <IconButton icon="close" label={t('back')} size={38} onPress={close} />
       </View>
 
       <ScrollView
@@ -220,6 +247,9 @@ export default function SettingsScreen() {
             {t('version')} {Constants.expoConfig?.version}
           </T>
         </View>
+        <View style={styles.pad}>
+          <Button title={t('saveAndExit')} icon="checkmark" onPress={saveAndExit} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -357,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.lg,
-    paddingTop: space.xl,
+    paddingTop: space.md,
     paddingBottom: space.md,
   },
   pad: { paddingHorizontal: space.lg },
