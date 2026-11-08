@@ -23,4 +23,10 @@ describe('kozmetik', () => {
     const gold = skinByKey('gold');
     expect(isOwned(gold, [gold.id], false, false)).toBe(false);
   });
+
+  it('baslangic paketi urunu paketle acilir', () => {
+    const copper = skinByKey('copper');
+    expect(isOwned(copper, [], false, false)).toBe(false);
+    expect(isOwned(copper, [], false, true)).toBe(true);
+  });
 });
