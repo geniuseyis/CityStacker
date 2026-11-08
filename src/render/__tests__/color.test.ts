@@ -18,4 +18,9 @@ describe('renk yardimcilari', () => {
   it('alpha rgba metni uretir', () => {
     expect(alpha('#ff8000', 0.5)).toBe('rgba(255,128,0,0.5)');
   });
+
+  it('smooth sinirlarda 0 ve 1', () => {
+    expect(smooth(0, 10, -5)).toBe(0);
+    expect(smooth(0, 10, 50)).toBe(1);
+  });
 });
