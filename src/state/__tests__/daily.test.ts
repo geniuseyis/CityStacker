@@ -14,4 +14,8 @@ describe('gunluk kule', () => {
   it('ayni gun ayni seed', () => {
     expect(dailySeed('2026-11-08')).toBe(dailySeed('2026-11-08'));
   });
+
+  it('farkli gun farkli seed', () => {
+    expect(dailySeed('2026-11-08')).not.toBe(dailySeed('2026-11-09'));
+  });
 });
