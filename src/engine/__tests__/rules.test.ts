@@ -29,4 +29,11 @@ describe('motor kurallari', () => {
   it('oyun tam hakla baslar', () => {
     expect(createGame(1, 'normal').lives).toBe(LIVES_MAX);
   });
+
+  it('oyun bos kule ve sifir puanla baslar', () => {
+    const s = createGame(1, 'normal');
+    expect(s.blocks).toHaveLength(0);
+    expect(s.score).toBe(0);
+    expect(s.combo).toBe(0);
+  });
 });
