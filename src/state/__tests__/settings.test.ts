@@ -11,4 +11,9 @@ describe('parseSettings', () => {
   it('varsayilan nesneyi paylasmaz', () => {
     expect(parseSettings(null)).not.toBe(DEFAULT_SETTINGS);
   });
+
+  it('gecerli ayarlar aynen korunur', () => {
+    const s = { ...DEFAULT_SETTINGS, sound: false, difficulty: 'hard', lang: 'en', guide: true };
+    expect(parseSettings(s)).toEqual(s);
+  });
 });
