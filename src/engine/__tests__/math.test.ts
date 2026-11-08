@@ -29,4 +29,13 @@ describe('matematik', () => {
   it('clamp araliktaki degeri korur', () => {
     expect(clamp(7, 0, 10)).toBe(7);
   });
+
+  it('rastgele sayi 0-1 araliginda', () => {
+    const st = { rng: 7 };
+    for (let i = 0; i < 2000; i++) {
+      const v = nextRandom(st);
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
 });
