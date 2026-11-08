@@ -133,7 +133,7 @@ export default function Records() {
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.top}>
         <T v="title">{t('records')}</T>
         <IconButton icon="close" label={t('back')} size={38} onPress={() => router.back()} />
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.lg,
-    paddingTop: space.xl,
+    paddingTop: space.md,
     paddingBottom: space.md,
   },
   hero: {
