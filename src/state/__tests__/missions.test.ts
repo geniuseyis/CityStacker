@@ -33,4 +33,8 @@ describe('gorevler', () => {
       expect(new Set(kinds).size).toBe(3);
     }
   });
+
+  it('kimlik tur ve hedeften olusur', () => {
+    for (const x of missionsFor('2026-12-01')) expect(x.id).toBe(`${x.kind}.${x.target}`);
+  });
 });
