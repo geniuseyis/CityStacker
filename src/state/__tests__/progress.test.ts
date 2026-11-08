@@ -42,4 +42,8 @@ describe('parseProgress', () => {
   it('rekorlar zorluga gore okunur', () => {
     expect(parseProgress({ best: { easy: 10, normal: 20, hard: 30 } }).best).toEqual({ easy: 10, normal: 20, hard: 30 });
   });
+
+  it('eksik rekor sifir sayilir', () => {
+    expect(parseProgress({ best: { hard: 5 } }).best).toEqual({ easy: 0, normal: 0, hard: 5 });
+  });
 });
