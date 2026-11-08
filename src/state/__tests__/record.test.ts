@@ -52,4 +52,9 @@ describe('parseRecord', () => {
   it('sayi olmayan adim reddedilir', () => {
     expect(parseRecord(rec({ inputs: [{ tick: 'a', kind: 'drop' }] }))).toBeNull();
   });
+
+  it('ayni adimda iki girdi kabul edilir', () => {
+    const inputs = [{ tick: 5, kind: 'continue' }, { tick: 5, kind: 'drop' }];
+    expect(parseRecord(rec({ inputs }))?.inputs).toHaveLength(2);
+  });
 });
