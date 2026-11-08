@@ -17,4 +17,10 @@ describe('gokyuzu temalari', () => {
   it('bilinmeyen tema ilk temaya doner', () => {
     expect(getTheme('yok')).toBe(THEMES[0]);
   });
+
+  it('kat rekoru dolunca tema acilir', () => {
+    const locked = THEMES.find((t) => t.unlockFloors > 0)!;
+    expect(isUnlocked(locked, locked.unlockFloors - 1)).toBe(false);
+    expect(isUnlocked(locked, locked.unlockFloors)).toBe(true);
+  });
 });
