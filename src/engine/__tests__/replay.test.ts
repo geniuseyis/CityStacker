@@ -71,4 +71,9 @@ describe('replay', () => {
     const s = simulate(1, 'normal', [], 'clear', 50);
     expect(s.tick).toBe(50);
   });
+
+  it('simulate olaylari temizler', () => {
+    const s = play(20);
+    expect(simulate(s.seed, s.difficulty, s.inputs, s.weather).events).toHaveLength(0);
+  });
 });
