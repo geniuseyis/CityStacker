@@ -49,4 +49,8 @@ describe('gorevler', () => {
     expect(advance(m('perfectStreak'), 4, run({ perfectStreak: 2 }))).toBe(4);
     expect(advance(m('perfectStreak'), 4, run({ perfectStreak: 6 }))).toBe(6);
   });
+
+  it('kat gorevi tek oyunun en iyisini tutar', () => {
+    expect(advance(m('floorsRun'), 12, run({ floors: 5 }))).toBe(12);
+  });
 });
