@@ -163,18 +163,6 @@ flowchart LR
 
 <br>
 
-## Gelir modeli
-
-Oyun 3 kalple başlar; kalpler bitince jetonla devam edilir. Jetonlar satın alınır ya da günlük seri, görevler ve reklam izleyerek kazanılır. Plumbline Pro reklamları kaldırır.
-
-| | ABD | Türkiye |
-| :-- | :-- | :-- |
-| Jeton 5 / 15 / 40 / 100 | $0.99 / $2.49 / $5.99 / $12.99 | ₺24,99 / ₺59,99 / ₺139,99 / ₺299,99 |
-| Başlangıç paketi | $1.99 | ₺49,99 |
-| Pro haftalık / aylık / ömür boyu | $1.99 / $4.99 / $14.99 | ₺49,99 / ₺119,99 / ₺349,99 |
-
-<br>
-
 ## Güvenlik ve gizlilik
 
 - Hesap, sunucu, izleme yok; kişisel veri toplanmaz
