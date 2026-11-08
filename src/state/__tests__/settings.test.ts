@@ -16,4 +16,8 @@ describe('parseSettings', () => {
     const s = { ...DEFAULT_SETTINGS, sound: false, difficulty: 'hard', lang: 'en', guide: true };
     expect(parseSettings(s)).toEqual(s);
   });
+
+  it('boolean olmayan ses ayari varsayilana doner', () => {
+    expect(parseSettings({ sound: 'off' }).sound).toBe(true);
+  });
 });
