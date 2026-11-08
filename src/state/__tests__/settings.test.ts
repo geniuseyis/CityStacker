@@ -26,4 +26,8 @@ describe('parseSettings', () => {
     expect(s.music).toBe(false);
     expect(s.haptics).toBe(false);
   });
+
+  it('bilinmeyen zorluk normal olur', () => {
+    expect(parseSettings({ difficulty: 'imkansiz' }).difficulty).toBe('normal');
+  });
 });
