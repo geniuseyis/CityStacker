@@ -101,4 +101,10 @@ describe('motor kurallari', () => {
     expect(s.combo).toBe(0);
     expect(s.continues).toBe(1);
   });
+
+  it('devam girdisi kayda islenir', () => {
+    const s = over();
+    continueRun(s);
+    expect(s.inputs.at(-1)?.kind).toBe('continue');
+  });
 });
