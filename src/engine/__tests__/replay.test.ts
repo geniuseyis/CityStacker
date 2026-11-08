@@ -66,4 +66,9 @@ describe('replay', () => {
     expect(a.score).toBe(b.score);
     expect(a.tick).toBe(b.tick);
   });
+
+  it('simulate adim sinirinda durur', () => {
+    const s = simulate(1, 'normal', [], 'clear', 50);
+    expect(s.tick).toBe(50);
+  });
 });
