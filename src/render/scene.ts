@@ -9,6 +9,7 @@ import {
 } from '@shopify/react-native-skia';
 import {
   BLOCK,
+  GRAVITY,
   GROUND_Y,
   PIVOT_Y,
   VIEW_H,
@@ -24,7 +25,6 @@ import {
   ropeEnd,
   type GameEvent,
   type GameState,
-  type ToppledBlock,
 } from '@/engine';
 import { alpha, mix, smooth } from './color';
 import { C, R, linear, paint, record } from './draw';
@@ -55,19 +55,8 @@ type Streak = { x: number; y: number; vx: number; vy: number; len: number; life:
 
 const GHOST_GAP = 140; // hayalet kule oyuncunun kulesinin bu kadar sağında
 
-// devrilen bölüm: önce pivot (destek katın kenarı) etrafında katı cisim gibi döner,
-// ağırlık merkezi kenarı iyice geçince serbest düşer
-type Debris = {
-  blocks: ToppledBlock[];
-  px: number;
-  py: number;
-  dir: 1 | -1;
-  angle: number; // derece
-  av: number; // derece/sn
-  fall: number;
-  fallV: number;
-  driftX: number;
-};
+// kenardan düşen katın kopardığı katlar: dönerek serbest düşer
+type Falling = { x: number; y: number; vx: number; vy: number; rot: number; vr: number; style: number; lit: number };
 
 export class Scene {
   theme: SkyTheme;
@@ -82,9 +71,8 @@ export class Scene {
 
   private particles: Particle[] = [];
   private rings: Ring[] = [];
-  private debris: Debris[] = [];
+  private falling: Falling[] = [];
   private flash = 0;
-  private shake = 0;
   private time = 0;
   private hook = { x: VIEW_W / 2, y: PIVOT_Y + 40 };
 
@@ -301,23 +289,17 @@ export class Scene {
       case 'miss':
         if (ev.tipped) this.dust(ev.x, ev.y + BLOCK, Math.round(10 * lots), 0.7);
         break;
-      case 'topple':
-        this.debris.push({
-          blocks: ev.blocks,
-          px: ev.pivotX,
-          py: ev.pivotY,
-          dir: ev.dir,
-          angle: 0,
-          av: ev.dir * 20,
-          fall: 0,
-          fallV: 0,
-          driftX: 0,
-        });
-        this.dust(ev.pivotX, ev.pivotY, Math.round(22 * lots), 1.1);
-        if (!this.reducedMotion) this.shake = 0.7;
-        break;
-      case 'continue':
-        this.debris = [];
+      case 'knock':
+        for (const b of ev.blocks) {
+          this.falling.push({
+            ...b,
+            vx: ev.dir * (70 + this.rand() * 70),
+            vy: -40 - this.rand() * 60,
+            rot: 0,
+            vr: ev.dir * (70 + this.rand() * 80),
+          });
+        }
+        this.dust(ev.blocks[0].x + BLOCK / 2, ev.blocks[0].y + BLOCK, Math.round(14 * lots), 0.9);
         break;
       default:
         break;
@@ -373,9 +355,8 @@ export class Scene {
     this.lightning = 0;
     this.particles = [];
     this.rings = [];
-    this.debris = [];
+    this.falling = [];
     this.flash = 0;
-    this.shake = 0;
   }
 
   /* ------------------------------ çizim ------------------------------ */
@@ -430,11 +411,8 @@ export class Scene {
       p.setAlphaf(1);
     }
 
-    const shakeX = this.shake > 0 ? (this.rand() - 0.5) * this.shake * 14 : 0;
-    const shakeY = this.shake > 0 ? (this.rand() - 0.5) * this.shake * 6 : 0;
-
     c.save();
-    c.translate(ox + shakeX, oy + shakeY);
+    c.translate(ox, oy);
     c.scale(k, k);
 
     // yıldızlar: yükseldikçe belirir
@@ -560,8 +538,15 @@ export class Scene {
       c.restore();
     }
 
+    for (const f of this.falling) {
+      c.save();
+      c.translate(f.x, f.y);
+      c.rotate(f.rot, BLOCK / 2, BLOCK);
+      c.drawPicture(this.blockPic(f.style, f.lit, false));
+      c.restore();
+    }
+
     if (guide) this.drawGuide(c, s);
-    this.drawDebris(c);
     this.drawCrane(c, s);
 
     if (s.cur) {
@@ -798,7 +783,6 @@ export class Scene {
   private step(dt: number, s: GameState) {
     this.stepWeather(dt, s);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 2.2);
-    if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 1.8);
 
     if (!ropeEnd(s)) {
       // kanca yukarı toplanır
@@ -821,20 +805,14 @@ export class Scene {
       for (const r of this.rings) r.t += dt * 1.8;
       this.rings = this.rings.filter((r) => r.t < 1);
     }
-    if (this.debris.length) {
-      for (const d of this.debris) {
-        // devrilme: açı büyüdükçe yerçekiminin torku artar (sin θ)
-        const th = (Math.abs(d.angle) * Math.PI) / 180;
-        d.av += d.dir * (90 + 520 * Math.sin(th)) * dt;
-        d.angle += d.av * dt;
-        // ağırlık merkezi kenarı iyice geçince destekten kopar
-        if (Math.abs(d.angle) > 28) {
-          d.fallV += 1250 * dt;
-          d.fall += d.fallV * dt;
-          d.driftX += d.dir * 60 * dt;
-        }
+    if (this.falling.length) {
+      for (const f of this.falling) {
+        f.vy += GRAVITY * dt;
+        f.x += f.vx * dt;
+        f.y += f.vy * dt;
+        f.rot += f.vr * dt;
       }
-      this.debris = this.debris.filter((d) => d.fall < 1600);
+      this.falling = this.falling.filter((f) => f.y < VIEW_H + 200);
     }
   }
 
@@ -860,20 +838,5 @@ export class Scene {
     c.drawRect(R(cx - BLOCK / 2, y, BLOCK, BLOCK), this.p);
     this.p.setAlphaf(1);
     st.setAlphaf(1);
-  }
-
-  private drawDebris(c: SkCanvas) {
-    for (const d of this.debris) {
-      c.save();
-      c.translate(d.px + d.driftX, d.py + d.fall);
-      c.rotate(d.angle, 0, 0);
-      for (const b of d.blocks) {
-        c.save();
-        c.translate(b.x - d.px, b.y - d.py);
-        c.drawPicture(this.blockPic(b.style, b.lit, false));
-        c.restore();
-      }
-      c.restore();
-    }
   }
 }
