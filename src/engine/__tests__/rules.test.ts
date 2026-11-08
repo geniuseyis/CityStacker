@@ -80,4 +80,10 @@ describe('motor kurallari', () => {
     s.continues = 3;
     expect(continueCost(s)).toBe(4);
   });
+
+  it('oyun bitmeden devam edilemez', () => {
+    const s = createGame(3, 'normal', { weather: 'clear' });
+    expect(canContinue(s)).toBe(false);
+    expect(continueRun(s)).toBe(false);
+  });
 });
