@@ -18,13 +18,6 @@ iOS ve Android için modern bir kule oyunu.
 
 <br>
 
-![Expo SDK 58](https://img.shields.io/badge/Expo-SDK%2058-000020?style=flat-square&logo=expo&logoColor=white)
-![React Native](https://img.shields.io/badge/React%20Native-0.88-61DAFB?style=flat-square&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Skia](https://img.shields.io/badge/çizim-Skia-FF8A5C?style=flat-square)
-![Testler](https://img.shields.io/badge/testler-17%20başarılı-22C55E?style=flat-square)
-![Platform](https://img.shields.io/badge/platform-iOS%20·%20Android-71717A?style=flat-square)
-![Diller](https://img.shields.io/badge/diller-TR%20·%20EN-71717A?style=flat-square)
 
 **[Ekranlar](#ekranlar)** &nbsp;·&nbsp; **[Fizik](#fizik)** &nbsp;·&nbsp; **[Mimari](#mimari)** &nbsp;·&nbsp; **[Gizlilik](#güvenlik-ve-gizlilik)** &nbsp;·&nbsp; **[Yol haritası](#yol-haritası)**
 
