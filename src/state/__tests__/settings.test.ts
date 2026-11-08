@@ -20,4 +20,10 @@ describe('parseSettings', () => {
   it('boolean olmayan ses ayari varsayilana doner', () => {
     expect(parseSettings({ sound: 'off' }).sound).toBe(true);
   });
+
+  it('muzik ve titresim tek tek okunur', () => {
+    const s = parseSettings({ music: false, haptics: false });
+    expect(s.music).toBe(false);
+    expect(s.haptics).toBe(false);
+  });
 });
