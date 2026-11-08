@@ -21,4 +21,9 @@ describe('gorevler', () => {
   it('ayni gun ayni gorevler', () => {
     expect(missionsFor('2026-11-08')).toEqual(missionsFor('2026-11-08'));
   });
+
+  it('farkli gunlerde gorevler degisir', () => {
+    const days = Array.from({ length: 10 }, (_, i) => JSON.stringify(missionsFor(`2026-11-0${i}`)));
+    expect(new Set(days).size).toBeGreaterThan(1);
+  });
 });
