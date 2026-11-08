@@ -12,4 +12,10 @@ describe('kozmetik', () => {
     expect(isOwned(glass, [], true, true)).toBe(false);
     expect(isOwned(glass, [glass.id], false, false)).toBe(true);
   });
+
+  it('pro urunu pro ile acilir', () => {
+    const gold = skinByKey('gold');
+    expect(isOwned(gold, [], false, false)).toBe(false);
+    expect(isOwned(gold, [], true, false)).toBe(true);
+  });
 });
