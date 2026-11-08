@@ -40,4 +40,8 @@ describe('parseRecord', () => {
   it('bilinmeyen girdi turu reddedilir', () => {
     expect(parseRecord(rec({ inputs: [{ tick: 1, kind: 'hile' }] }))).toBeNull();
   });
+
+  it('geriye giden adim reddedilir', () => {
+    expect(parseRecord(rec({ inputs: [{ tick: 9, kind: 'drop' }, { tick: 3, kind: 'drop' }] }))).toBeNull();
+  });
 });
