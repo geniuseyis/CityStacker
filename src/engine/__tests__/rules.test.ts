@@ -66,4 +66,8 @@ describe('motor kurallari', () => {
     expect(drop(s)).toBe(false);
     expect(s.inputs).toHaveLength(1);
   });
+
+  it('oyun bitince birakma calismaz', () => {
+    expect(drop(over())).toBe(false);
+  });
 });
