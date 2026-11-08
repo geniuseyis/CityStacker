@@ -3,13 +3,13 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 export type Weather = 'clear' | 'windy' | 'storm' | 'fog';
 
 // swinging: vinçte | dropping: serbest düşüş | falling: ıska, ekrandan düşüyor
-// settling: devrilen bölüm yıkılırken kısa bekleme | over: bitti
-export type Phase = 'swinging' | 'dropping' | 'falling' | 'settling' | 'over';
+// over: bitti
+export type Phase = 'swinging' | 'dropping' | 'falling' | 'over';
 
 export type Grade = 'perfect' | 'good' | 'ok';
 
-// miss: kat ıskalayıp düştü | tipped: kenardan devrildi | collapse: kule bölümü yıkıldı
-export type OverReason = 'miss' | 'tipped' | 'collapse';
+// miss: kat ıskalayıp düştü | tipped: kenardan devrildi
+export type OverReason = 'miss' | 'tipped';
 
 // cx: kule uzayında (dinlenme konumu) kat merkezi. lit: 6 pencerenin bit maskesi
 export type Block = { level: number; cx: number; style: number; lit: number };
@@ -26,14 +26,14 @@ export type Hanging = {
   lit: number;
 };
 
-export type ToppledBlock = { x: number; y: number; style: number; lit: number };
+export type FallenBlock = { x: number; y: number; style: number; lit: number };
 
 export type GameEvent =
   | { type: 'drop' }
   | { type: 'land'; grade: Grade; combo: number; points: number; x: number; y: number }
   | { type: 'miss'; livesLeft: number; x: number; y: number; tipped: boolean }
-  // ağırlık merkezi desteği aştı: bölüm pivot etrafında devrilir (renderer canlandırır)
-  | { type: 'topple'; livesLeft: number; dir: 1 | -1; pivotX: number; pivotY: number; blocks: ToppledBlock[] }
+  // kenardan düşen kat tepeden kat kopardı (renderer düşürür)
+  | { type: 'knock'; dir: 1 | -1; blocks: FallenBlock[] }
   | { type: 'respawn' }
   | { type: 'over'; reason: OverReason }
   | { type: 'continue' };
@@ -48,7 +48,6 @@ export type GameState = {
   phase: Phase;
   overReason: OverReason | null;
   lastLoss: OverReason | null;
-  waitT: number;
 
   blocks: Block[];
   cur: Hanging | null;
@@ -77,6 +76,10 @@ export type GameState = {
 
   score: number;
   combo: number;
+  // kombo sayacının kalan süresi (sn)
+  comboT: number;
+  // geçerli katın vince geldiği adım (hız bonusu için)
+  spawnTick: number;
   bestCombo: number;
   perfects: number;
   lives: number;
