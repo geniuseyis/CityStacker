@@ -152,7 +152,7 @@ export const isProActive = (p: ProState | null, now = Date.now()) => !!p && (p.u
 // Hayalet kaydı: sadece şekli doğrulanır. Oynanırken motor kaydı baştan oynatır,
 // tutarsız bir kayıt sadece garip bir hayalet üretir, oyuna zarar vermez.
 export function parseRecord(v: unknown): RunRecord | null {
-  if (!isObj(v) || v.v !== 1 || !Array.isArray(v.inputs) || v.inputs.length > MAX_GHOST_INPUTS) return null;
+  if (!isObj(v) || v.v !== 5 || !Array.isArray(v.inputs) || v.inputs.length > MAX_GHOST_INPUTS) return null;
   if (!WEATHERS.includes(v.weather as Weather)) return null;
   const inputs: Input[] = [];
   let last = 0;
@@ -164,7 +164,7 @@ export function parseRecord(v: unknown): RunRecord | null {
     inputs.push({ tick, kind: i.kind });
   }
   return {
-    v: 1,
+    v: 5,
     seed: int(v.seed, 0, 0xffffffff),
     difficulty: diff(v.difficulty, 'normal'),
     weather: v.weather as Weather,
