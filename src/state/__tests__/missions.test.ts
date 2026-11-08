@@ -61,4 +61,8 @@ describe('gorevler', () => {
   it('mukemmel gorevi toplanir', () => {
     expect(advance(m('perfects'), 3, run({ perfects: 4 }))).toBe(7);
   });
+
+  it('oyun gorevi her oyunda bir artar', () => {
+    expect(advance(m('games'), 2, run())).toBe(3);
+  });
 });
