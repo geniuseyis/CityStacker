@@ -100,4 +100,8 @@ describe('parseProgress', () => {
     const items = Array.from({ length: 9 }, () => ({ id: 'games.3', progress: 1 }));
     expect(parseProgress({ missions: { date: '2026-11-08', items } }).missions?.items).toHaveLength(5);
   });
+
+  it('gorevlerin tarihi bozuksa hepsi silinir', () => {
+    expect(parseProgress({ missions: { date: 'x', items: [] } }).missions).toBeNull();
+  });
 });
