@@ -135,7 +135,7 @@ flowchart LR
 | Paylaşım | Skia offscreen yüzey, expo-file-system, expo-sharing |
 | Dil | expo-localization, yerleşik TR / EN sözlükleri |
 | Test | Vitest |
-| Varlıklar | Ses, müzik, ikon ve README görselleri kodla üretilir (`scripts/`) |
+| Varlıklar | Ses, müzik ve ikon kodla üretilir (`scripts/`) |
 | Derleme | EAS Build |
 
 </details>
@@ -154,7 +154,7 @@ flowchart LR
 │   ├── services/           # depolama, ses, satın alma, reklam, paylaşım
 │   ├── ui/                 # bileşenler, tasarım tokenları
 │   └── i18n/               # Türkçe ve İngilizce
-├── scripts/                # ses, müzik, ikon ve README görseli üreticileri
+├── scripts/                # ses, müzik ve ikon üreticileri
 ├── assets/                 # ikon, açılış, ses ve müzik
 └── docs/                   # gizlilik, mağaza metinleri, gelir modeli, ekranlar
 ```
