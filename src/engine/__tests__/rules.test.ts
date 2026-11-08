@@ -130,4 +130,9 @@ describe('motor kurallari', () => {
   it('zorluk arttikca salinim hizlanir', () => {
     expect(DIFFICULTY.hard.swing).toBeGreaterThan(DIFFICULTY.easy.swing);
   });
+
+  it('zor hava daha cok puan verir', () => {
+    expect(WEATHER.storm.score).toBeGreaterThan(WEATHER.windy.score);
+    expect(WEATHER.windy.score).toBeGreaterThan(WEATHER.clear.score);
+  });
 });
