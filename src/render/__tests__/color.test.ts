@@ -10,4 +10,8 @@ describe('renk yardimcilari', () => {
   it('mix ortada yarilar', () => {
     expect(mix('#000000', '#ffffff', 0.5)).toBe('#808080');
   });
+
+  it('mix bastaki sifirlari korur', () => {
+    expect(mix('#000000', '#0000ff', 0.5)).toBe('#000080');
+  });
 });
