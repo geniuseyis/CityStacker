@@ -8,17 +8,18 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
-  FadeOutUp,
-  ZoomIn,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   COMBO_MAX,
+  COMBO_TIME,
+  LIVES_MAX,
   MAX_CONTINUES,
   WEATHER,
   canContinue,
@@ -55,7 +56,7 @@ import { Button, Glass, IconButton, T } from '@/ui/components';
 import { color, font, radius, space } from '@/ui/tokens';
 import { WEATHER_ICON } from '@/ui/weather';
 
-type Popup = { id: number; text: string; tone: 'perfect' | 'good' | 'bad' };
+type Popup = { id: number; text: string; tone: 'perfect' | 'good' };
 type Hud = { score: number; floors: number; combo: number };
 type Over = { reason: OverReason; stage: 'offer' | 'results' };
 
@@ -325,6 +326,7 @@ export default function Play() {
         <View style={styles.hudRow} pointerEvents="box-none">
           <View style={styles.side} pointerEvents="box-none">
             <IconButton icon="pause" label={t('paused')} onPress={() => setPaused(true)} />
+            <Hearts lives={s.lives} reduced={settings.reducedMotion} />
           </View>
 
           <View
@@ -334,14 +336,7 @@ export default function Play() {
             accessibilityLabel={`${hud.floors} ${t('floors')}`}
           >
             <T style={styles.floorsNum}>{hud.floors}</T>
-            <View style={styles.comboTrack}>
-              <View
-                style={[
-                  styles.comboFill,
-                  { width: `${comboRatio * 100}%`, backgroundColor: comboRatio >= 0.8 ? color.mint : theme.accent },
-                ]}
-              />
-            </View>
+            <ComboMeter game={game} tint={comboRatio >= 0.8 ? color.mint : theme.accent} />
           </View>
 
           <View style={[styles.side, styles.scoreBox]} pointerEvents="none">
@@ -393,16 +388,17 @@ export default function Play() {
         <Animated.View
           key={popup.id}
           pointerEvents="none"
-          entering={settings.reducedMotion ? FadeIn.duration(120) : ZoomIn.springify().damping(14).stiffness(260)}
-          exiting={FadeOutUp.duration(260)}
-          style={styles.popup}
+          entering={FadeIn.duration(120)}
+          exiting={FadeOut.duration(220)}
+          style={[styles.popup, { bottom: insets.bottom + 64 }]}
         >
           <T
+            numberOfLines={1}
+            adjustsFontSizeToFit
             style={[
               styles.popupText,
               popup.tone === 'perfect' && { color: '#FFFFFF', textShadowColor: color.mint },
               popup.tone === 'good' && { color: '#FFFFFF', textShadowColor: theme.accent },
-              popup.tone === 'bad' && { color: color.danger, fontSize: 22 },
             ]}
           >
             {popup.text}
@@ -449,6 +445,12 @@ export default function Play() {
               icon="play"
               onPress={() => setPaused(false)}
               style={{ backgroundColor: theme.accent }}
+            />
+            <Button
+              title={t('settings')}
+              kind="secondary"
+              icon="settings-outline"
+              onPress={() => router.push('/settings')}
             />
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               <Button title={t('home')} kind="secondary" icon="home-outline" onPress={exit} style={{ flex: 1 }} />
@@ -501,7 +503,7 @@ export default function Play() {
             <Glass strong style={styles.sheet}>
               <T
                 v="label"
-                style={{ textAlign: 'center', color: over.reason === 'collapse' ? color.danger : theme.accent }}
+                style={{ textAlign: 'center', color: theme.accent }}
               >
                 {t(`reason.${over.reason}` as 'reason.miss')}
               </T>
@@ -640,11 +642,65 @@ function TutorialHint({ text, sub }: { text: string; sub: string }) {
   );
 }
 
+// kalan haklar: kaybedilen kalp büyüyüp söner, yerinde boş kontur kalır
+function Hearts({ lives, reduced }: { lives: number; reduced: boolean }) {
+  return (
+    <View style={styles.hearts} accessible accessibilityLabel={`${lives} / ${LIVES_MAX}`}>
+      {Array.from({ length: LIVES_MAX }, (_, i) => (
+        <Heart key={i} alive={i < lives} reduced={reduced} />
+      ))}
+    </View>
+  );
+}
+
+function Heart({ alive, reduced }: { alive: boolean; reduced: boolean }) {
+  const k = useSharedValue(alive ? 1 : 0);
+  useEffect(() => {
+    if (reduced) k.value = alive ? 1 : 0;
+    else if (alive) k.value = withSpring(1, { damping: 11, stiffness: 220 });
+    else k.value = withSequence(withTiming(1.55, { duration: 130 }), withTiming(0, { duration: 340 }));
+  }, [alive, reduced, k]);
+  const a = useAnimatedStyle(() => ({
+    opacity: Math.min(1, k.value),
+    transform: [{ scale: k.value }],
+  }));
+  return (
+    <View style={styles.heart}>
+      <Ionicons name="heart-outline" size={20} color="rgba(255,255,255,0.4)" style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, a]}>
+        <Ionicons name="heart" size={20} color={color.danger} />
+      </Animated.View>
+    </View>
+  );
+}
+
+// kombonun kalan süresi; oyun durumundan her karede okunur
+function ComboMeter({ game, tint }: { game: { current: GameState }; tint: string }) {
+  const fill = useSharedValue(0);
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      fill.value = game.current.comboT / COMBO_TIME;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [game, fill]);
+  const a = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
+  return (
+    <View style={styles.comboTrack}>
+      <Animated.View style={[styles.comboFill, { backgroundColor: tint }, a]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
   hud: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: space.lg },
   hudRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   side: { width: 96 },
+  hearts: { flexDirection: 'row', gap: 4, marginTop: 8 },
+  heart: { width: 20, height: 20 },
   scoreBox: { alignItems: 'flex-end', paddingTop: 4 },
   floorsBox: { alignItems: 'center' },
   floorsNum: {
@@ -666,12 +722,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   comboFill: { height: '100%', borderRadius: 2 },
-  popup: { position: 'absolute', top: '40%', left: 0, right: 0, alignItems: 'center' },
+  // kuleyi kapatmasın diye altta ve küçük
+  popup: { position: 'absolute', left: 0, right: 0, alignItems: 'center', paddingHorizontal: space.lg },
   popupText: {
     fontFamily: font.black,
-    fontSize: 30,
-    letterSpacing: -0.6,
-    textShadowRadius: 18,
+    fontSize: 15,
+    // body stilinin satır yüksekliği yazıyı kesmesin
+    lineHeight: 22,
+    paddingHorizontal: space.md,
+    textShadowRadius: 8,
     textShadowOffset: { width: 0, height: 0 },
   },
   overlay: {
