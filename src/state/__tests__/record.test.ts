@@ -57,4 +57,8 @@ describe('parseRecord', () => {
     const inputs = [{ tick: 5, kind: 'continue' }, { tick: 5, kind: 'drop' }];
     expect(parseRecord(rec({ inputs }))?.inputs).toHaveLength(2);
   });
+
+  it('seed 32 bit ile sinirli', () => {
+    expect(parseRecord(rec({ seed: 2 ** 40 }))?.seed).toBe(0xffffffff);
+  });
 });
