@@ -58,4 +58,12 @@ describe('replay', () => {
     const r = toRecord(play(18));
     expect(verify({ ...r, v: 1 } as unknown as typeof r)).toBe(false);
   });
+
+  it('simulate ayni girdilerle ayni sonucu verir', () => {
+    const s = play(19);
+    const a = simulate(s.seed, s.difficulty, s.inputs, s.weather);
+    const b = simulate(s.seed, s.difficulty, s.inputs, s.weather);
+    expect(a.score).toBe(b.score);
+    expect(a.tick).toBe(b.tick);
+  });
 });
