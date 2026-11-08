@@ -37,4 +37,9 @@ describe('replay', () => {
     const r = toRecord(play(14));
     expect(verify({ ...r, score: r.score + 1 })).toBe(false);
   });
+
+  it('sisirilmis kat reddedilir', () => {
+    const r = toRecord(play(15));
+    expect(verify({ ...r, floors: r.floors + 1 })).toBe(false);
+  });
 });
