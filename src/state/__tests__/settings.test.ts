@@ -30,4 +30,8 @@ describe('parseSettings', () => {
   it('bilinmeyen zorluk normal olur', () => {
     expect(parseSettings({ difficulty: 'imkansiz' }).difficulty).toBe('normal');
   });
+
+  it('buyuk harfli tema kimligi reddedilir', () => {
+    expect(parseSettings({ theme: 'DUSK' }).theme).toBe(DEFAULT_SETTINGS.theme);
+  });
 });
