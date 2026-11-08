@@ -80,4 +80,9 @@ describe('gorevler', () => {
     expect(advance(m('weatherFloors'), 3, run({ floors: 20, weather: 'clear' }))).toBe(3);
     expect(advance(m('weatherFloors'), 3, run({ floors: 20, weather: 'fog' }))).toBe(3);
   });
+
+  it('hayalet gorevi yalnizca gecince artar', () => {
+    expect(advance(m('ghostBeat'), 0, run())).toBe(0);
+    expect(advance(m('ghostBeat'), 0, run({ ghostBeaten: true }))).toBe(1);
+  });
 });
