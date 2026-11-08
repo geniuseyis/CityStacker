@@ -44,4 +44,8 @@ describe('parseRecord', () => {
   it('geriye giden adim reddedilir', () => {
     expect(parseRecord(rec({ inputs: [{ tick: 9, kind: 'drop' }, { tick: 3, kind: 'drop' }] }))).toBeNull();
   });
+
+  it('negatif adim sifira cekilir', () => {
+    expect(parseRecord(rec({ inputs: [{ tick: -4, kind: 'drop' }] }))?.inputs[0].tick).toBe(0);
+  });
 });
