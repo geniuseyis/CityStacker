@@ -66,7 +66,7 @@ export function ContinueOffer(p: Props) {
       <Glass strong style={styles.sheet}>
         <View style={{ alignItems: 'center', gap: 6 }}>
           <View style={[styles.icon, { backgroundColor: color.danger + '22' }]}>
-            <Ionicons name={p.reason === 'collapse' ? 'warning' : 'arrow-down'} size={22} color={color.danger} />
+            <Ionicons name="arrow-down" size={22} color={color.danger} />
           </View>
           <T v="title" style={{ textAlign: 'center' }}>
             {title}
