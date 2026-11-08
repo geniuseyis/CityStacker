@@ -23,4 +23,8 @@ describe('Pro kaydi', () => {
   it('kayit yoksa pro aktif degil', () => {
     expect(isProActive(null)).toBe(false);
   });
+
+  it('omur boyu plan hep aktif', () => {
+    expect(isProActive({ plan: 'lifetime', until: null })).toBe(true);
+  });
 });
