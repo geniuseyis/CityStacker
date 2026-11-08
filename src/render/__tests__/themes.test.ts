@@ -23,4 +23,8 @@ describe('gokyuzu temalari', () => {
     expect(isUnlocked(locked, locked.unlockFloors - 1)).toBe(false);
     expect(isUnlocked(locked, locked.unlockFloors)).toBe(true);
   });
+
+  it('her temada kat paleti var', () => {
+    for (const t of THEMES) expect(t.blocks.length).toBeGreaterThan(0);
+  });
 });
