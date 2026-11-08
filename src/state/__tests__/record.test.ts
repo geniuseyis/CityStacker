@@ -19,4 +19,8 @@ describe('parseRecord', () => {
   it('gecerli kayit okunur', () => {
     expect(parseRecord(rec())).toEqual(rec());
   });
+
+  it('eski surum kayit reddedilir', () => {
+    expect(parseRecord(rec({ v: 1 }))).toBeNull();
+  });
 });
