@@ -14,4 +14,8 @@ describe('renk yardimcilari', () => {
   it('mix bastaki sifirlari korur', () => {
     expect(mix('#000000', '#0000ff', 0.5)).toBe('#000080');
   });
+
+  it('alpha rgba metni uretir', () => {
+    expect(alpha('#ff8000', 0.5)).toBe('rgba(255,128,0,0.5)');
+  });
 });
