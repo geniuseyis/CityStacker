@@ -50,4 +50,9 @@ describe('parseProgress', () => {
   it('liste olmayan oyun gecmisi bosalir', () => {
     expect(parseProgress({ runs: 'x' }).runs).toEqual([]);
   });
+
+  it('oyun gecmisi sinirla kesilir', () => {
+    const runs = Array.from({ length: MAX_RUNS + 10 }, (_, i) => ({ score: i }));
+    expect(parseProgress({ runs }).runs).toHaveLength(MAX_RUNS);
+  });
 });
