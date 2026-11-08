@@ -32,4 +32,9 @@ describe('replay', () => {
     expect(r.floors).toBe(s.blocks.length);
     expect(r.score).toBe(s.score);
   });
+
+  it('sisirilmis puan reddedilir', () => {
+    const r = toRecord(play(14));
+    expect(verify({ ...r, score: r.score + 1 })).toBe(false);
+  });
 });
