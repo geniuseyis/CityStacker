@@ -48,4 +48,9 @@ describe('replay', () => {
     expect(r.floors).toBeGreaterThan(0);
     expect(verify({ ...r, difficulty: 'hard' })).toBe(false);
   });
+
+  it('sirasi bozuk girdiler reddedilir', () => {
+    const r = toRecord(play(17));
+    expect(verify({ ...r, inputs: [{ tick: 9, kind: 'drop' }, { tick: 2, kind: 'drop' }] })).toBe(false);
+  });
 });
