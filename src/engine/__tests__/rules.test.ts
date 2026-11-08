@@ -135,4 +135,8 @@ describe('motor kurallari', () => {
     expect(WEATHER.storm.score).toBeGreaterThan(WEATHER.windy.score);
     expect(WEATHER.windy.score).toBeGreaterThan(WEATHER.clear.score);
   });
+
+  it('fizik adimi 120 hz', () => {
+    expect(STEP).toBe(1 / 120);
+  });
 });
