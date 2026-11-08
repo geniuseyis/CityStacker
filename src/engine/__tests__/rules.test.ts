@@ -74,4 +74,10 @@ describe('motor kurallari', () => {
   it('devam ilk seferde 1 jeton', () => {
     expect(continueCost(over())).toBe(1);
   });
+
+  it('devam ucreti her seferde artar', () => {
+    const s = over();
+    s.continues = 3;
+    expect(continueCost(s)).toBe(4);
+  });
 });
