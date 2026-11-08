@@ -1,6 +1,7 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { getRandomBytes } from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import { createMMKV, type MMKV } from 'react-native-mmkv';
+import type { MMKV } from 'react-native-mmkv';
 
 // Kayıtlar AES-256 ile şifreli MMKV'de, anahtar Keychain / Keystore'da.
 // Amaç: jeton bakiyesi gibi verilerin dosyadan elle düzenlenememesi.
@@ -21,7 +22,8 @@ type Store = Pick<MMKV, 'getString' | 'set' | 'remove'>;
 
 let store: Store | null = null;
 
-// keychain erişilemezse (çok nadir) şifresiz diske düşmek yerine sadece bellekte tut
+// keychain erişilemezse (çok nadir) ya da Expo Go'da MMKV yoksa
+// şifresiz diske düşmek yerine sadece bellekte tut
 function memoryStore(): Store {
   const m = new Map<string, string>();
   return {
@@ -33,7 +35,13 @@ function memoryStore(): Store {
 
 function db(): Store {
   if (store) return store;
+  // Expo Go'da bu yerel modül yok ve yüklemeyi denemek bile kırmızı ekran açıyor
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+    store = memoryStore();
+    return store;
+  }
   try {
+    const { createMMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
     store = createMMKV({ id: 'cs-save', encryptionKey: loadKey(), encryptionType: 'AES-256' });
   } catch {
     store = memoryStore();
