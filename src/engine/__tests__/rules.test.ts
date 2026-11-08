@@ -58,4 +58,12 @@ describe('motor kurallari', () => {
     expect(drop(s)).toBe(true);
     expect(s.inputs[0].kind).toBe('drop');
   });
+
+  it('dusen kat tekrar birakilamaz', () => {
+    const s = createGame(2, 'normal', { weather: 'clear' });
+    for (let i = 0; i < 120 && s.phase !== 'swinging'; i++) step(s);
+    drop(s);
+    expect(drop(s)).toBe(false);
+    expect(s.inputs).toHaveLength(1);
+  });
 });
