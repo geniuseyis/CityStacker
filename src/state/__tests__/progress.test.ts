@@ -55,4 +55,8 @@ describe('parseProgress', () => {
     const runs = Array.from({ length: MAX_RUNS + 10 }, (_, i) => ({ score: i }));
     expect(parseProgress({ runs }).runs).toHaveLength(MAX_RUNS);
   });
+
+  it('gecmiste nesne olmayan satirlar atilir', () => {
+    expect(parseProgress({ runs: [1, null, { score: 5 }] }).runs).toHaveLength(1);
+  });
 });
