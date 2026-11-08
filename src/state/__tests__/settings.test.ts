@@ -38,4 +38,8 @@ describe('parseSettings', () => {
   it('cok uzun kimlik reddedilir', () => {
     expect(parseSettings({ skin: 'a'.repeat(41) }).skin).toBe(DEFAULT_SETTINGS.skin);
   });
+
+  it('noktali kimlik kabul edilir', () => {
+    expect(parseSettings({ crane: 'crane.red' }).crane).toBe('crane.red');
+  });
 });
