@@ -29,4 +29,8 @@ describe('kozmetik', () => {
     expect(isOwned(copper, [], false, false)).toBe(false);
     expect(isOwned(copper, [], false, true)).toBe(true);
   });
+
+  it('bilinmeyen kat stili klasige doner', () => {
+    expect(skinByKey('yok').key).toBe('classic');
+  });
 });
