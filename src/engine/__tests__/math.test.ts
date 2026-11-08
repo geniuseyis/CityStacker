@@ -54,4 +54,12 @@ describe('matematik', () => {
   it('bos metnin seedi FNV baslangicidir', () => {
     expect(seedFromString('')).toBe(0x811c9dc5);
   });
+
+  it('seed isaretsiz 32 bit', () => {
+    for (const s of ['a', 'kule', '2026-11-08', 'ğüşıöç']) {
+      const h = seedFromString(s);
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(0xffffffff);
+    }
+  });
 });
