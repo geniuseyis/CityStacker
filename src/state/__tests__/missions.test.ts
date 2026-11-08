@@ -70,4 +70,9 @@ describe('gorevler', () => {
     expect(advance(m('dailyPlay'), 0, run())).toBe(0);
     expect(advance(m('dailyPlay'), 0, run({ daily: true }))).toBe(1);
   });
+
+  it('hava gorevi ruzgarda ve firtinada sayilir', () => {
+    expect(advance(m('weatherFloors'), 0, run({ floors: 8, weather: 'windy' }))).toBe(8);
+    expect(advance(m('weatherFloors'), 0, run({ floors: 9, weather: 'storm' }))).toBe(9);
+  });
 });
