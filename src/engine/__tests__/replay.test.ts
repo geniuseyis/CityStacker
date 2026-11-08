@@ -84,4 +84,10 @@ describe('replay', () => {
     expect(g.s.score).toBe(s.score);
     expect(g.s.blocks.length).toBe(s.blocks.length);
   });
+
+  it('hayalet olay biriktirmez', () => {
+    const g = makeGhost(toRecord(play(22)));
+    for (let i = 0; i < 500; i++) stepGhost(g);
+    expect(g.s.events).toHaveLength(0);
+  });
 });
