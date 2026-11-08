@@ -13,4 +13,8 @@ describe('parseProgress', () => {
     expect(DEFAULT_PROGRESS.owned).toEqual([]);
     expect(DEFAULT_PROGRESS.best.easy).toBe(0);
   });
+
+  it('jeton yoksa baslangic jetonu verilir', () => {
+    expect(parseProgress({}).tokens).toBe(START_TOKENS);
+  });
 });
