@@ -65,4 +65,9 @@ describe('gorevler', () => {
   it('oyun gorevi her oyunda bir artar', () => {
     expect(advance(m('games'), 2, run())).toBe(3);
   });
+
+  it('gunluk gorev yalnizca gunun kulesinde artar', () => {
+    expect(advance(m('dailyPlay'), 0, run())).toBe(0);
+    expect(advance(m('dailyPlay'), 0, run({ daily: true }))).toBe(1);
+  });
 });
