@@ -23,4 +23,8 @@ describe('parseRecord', () => {
   it('eski surum kayit reddedilir', () => {
     expect(parseRecord(rec({ v: 1 }))).toBeNull();
   });
+
+  it('liste olmayan girdiler reddedilir', () => {
+    expect(parseRecord(rec({ inputs: 'x' }))).toBeNull();
+  });
 });
