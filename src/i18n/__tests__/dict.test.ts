@@ -12,4 +12,8 @@ describe('sozlukler', () => {
   it('degiskenler iki dilde ayni', () => {
     for (const k of Object.keys(tr) as (keyof typeof tr)[]) expect([k, vars(en[k])]).toEqual([k, vars(tr[k])]);
   });
+
+  it('bos metin yok', () => {
+    for (const d of [tr, en]) for (const v of Object.values(d)) expect(v.trim()).not.toBe('');
+  });
 });
