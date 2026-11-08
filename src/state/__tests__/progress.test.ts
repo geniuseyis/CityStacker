@@ -91,4 +91,8 @@ describe('parseProgress', () => {
   it('seri gunu 7yi asamaz', () => {
     expect(parseProgress({ streak: { day: 50 } }).streak.day).toBe(7);
   });
+
+  it('seride bozuk tarih silinir', () => {
+    expect(parseProgress({ streak: { last: 'yarin', day: 2 } }).streak.last).toBeNull();
+  });
 });
