@@ -53,4 +53,9 @@ describe('replay', () => {
     const r = toRecord(play(17));
     expect(verify({ ...r, inputs: [{ tick: 9, kind: 'drop' }, { tick: 2, kind: 'drop' }] })).toBe(false);
   });
+
+  it('eski surum kayit dogrulanmaz', () => {
+    const r = toRecord(play(18));
+    expect(verify({ ...r, v: 1 } as unknown as typeof r)).toBe(false);
+  });
 });
