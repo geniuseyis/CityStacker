@@ -36,4 +36,8 @@ describe('parseRecord', () => {
   it('bilinmeyen hava reddedilir', () => {
     expect(parseRecord(rec({ weather: 'kar' }))).toBeNull();
   });
+
+  it('bilinmeyen girdi turu reddedilir', () => {
+    expect(parseRecord(rec({ inputs: [{ tick: 1, kind: 'hile' }] }))).toBeNull();
+  });
 });
