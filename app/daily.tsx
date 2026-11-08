@@ -74,7 +74,7 @@ export default function Daily() {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <T v="title">{t('dailyTitle')}</T>
         <IconButton icon="close" label={t('back')} size={38} onPress={() => router.back()} />
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.lg,
-    paddingTop: space.xl,
+    paddingTop: space.md,
   },
   card: { padding: space.lg, gap: space.md, borderRadius: radius.xl, backgroundColor: color.surface },
   proCard: { overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,193,94,0.35)' },
