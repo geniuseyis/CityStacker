@@ -13,4 +13,8 @@ describe('gokyuzu temalari', () => {
     expect(t.key).toBe(DEFAULT_SETTINGS.theme);
     expect(isUnlocked(t, 0)).toBe(true);
   });
+
+  it('bilinmeyen tema ilk temaya doner', () => {
+    expect(getTheme('yok')).toBe(THEMES[0]);
+  });
 });
