@@ -46,4 +46,9 @@ describe('parseSettings', () => {
   it('tanimsiz dil cihaz diline birakilir', () => {
     expect(parseSettings({ lang: 'de' }).lang).toBeNull();
   });
+
+  it('hareketi azalt ayari okunur', () => {
+    expect(parseSettings({ reducedMotion: true }).reducedMotion).toBe(true);
+    expect(parseSettings({ reducedMotion: 1 }).reducedMotion).toBe(false);
+  });
 });
