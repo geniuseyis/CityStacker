@@ -107,4 +107,9 @@ describe('motor kurallari', () => {
     continueRun(s);
     expect(s.inputs.at(-1)?.kind).toBe('continue');
   });
+
+  it('kat yuksekligi blok kadar artar', () => {
+    expect(levelTop(0) - levelTop(1)).toBe(BLOCK);
+    expect(levelTop(0)).toBe(GROUND_Y - BLOCK);
+  });
 });
