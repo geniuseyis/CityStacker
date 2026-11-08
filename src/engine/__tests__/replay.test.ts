@@ -42,4 +42,10 @@ describe('replay', () => {
     const r = toRecord(play(15));
     expect(verify({ ...r, floors: r.floors + 1 })).toBe(false);
   });
+
+  it('baska zorlukta kayit tutmaz', () => {
+    const r = toRecord(play(30));
+    expect(r.floors).toBeGreaterThan(0);
+    expect(verify({ ...r, difficulty: 'hard' })).toBe(false);
+  });
 });
