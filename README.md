@@ -156,7 +156,7 @@ flowchart LR
 │   └── i18n/               # Türkçe ve İngilizce
 ├── scripts/                # ses, müzik ve ikon üreticileri
 ├── assets/                 # ikon, açılış, ses ve müzik
-└── docs/                   # gizlilik, mağaza metinleri, gelir modeli, ekranlar
+└── docs/                   # gizlilik politikası, ekran görüntüleri
 ```
 
 </details>
