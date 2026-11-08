@@ -5,4 +5,8 @@ describe('matematik', () => {
   it('dsin genis aralikta Math.sin ile uyusur', () => {
     for (let x = -20; x <= 20; x += 0.137) expect(dsin(x)).toBeCloseTo(Math.sin(x), 8);
   });
+
+  it('dsin sifirda sifir', () => {
+    expect(dsin(0)).toBe(0);
+  });
 });
