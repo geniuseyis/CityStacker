@@ -108,4 +108,8 @@ describe('parseProgress', () => {
   it('gorevde metin olmayan kimlik bos olur', () => {
     expect(parseProgress({ missions: { date: '2026-11-08', items: [{ id: 5 }] } }).missions?.items[0].id).toBe('');
   });
+
+  it('reklam jetonu sayaci 100u asamaz', () => {
+    expect(parseProgress({ adTokens: { date: '2026-11-08', count: 500 } }).adTokens?.count).toBe(100);
+  });
 });
