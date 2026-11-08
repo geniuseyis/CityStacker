@@ -21,4 +21,8 @@ describe('matematik', () => {
   it('clamp alt sinira ceker', () => {
     expect(clamp(-5, 0, 10)).toBe(0);
   });
+
+  it('clamp ust sinira ceker', () => {
+    expect(clamp(15, 0, 10)).toBe(10);
+  });
 });
