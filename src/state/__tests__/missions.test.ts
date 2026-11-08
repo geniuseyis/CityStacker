@@ -53,4 +53,8 @@ describe('gorevler', () => {
   it('kat gorevi tek oyunun en iyisini tutar', () => {
     expect(advance(m('floorsRun'), 12, run({ floors: 5 }))).toBe(12);
   });
+
+  it('puan gorevi tek oyunun en iyisini tutar', () => {
+    expect(advance(m('scoreRun'), 100, run({ score: 900 }))).toBe(900);
+  });
 });
