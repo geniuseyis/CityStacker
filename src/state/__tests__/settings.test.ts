@@ -7,4 +7,8 @@ describe('parseSettings', () => {
     expect(parseSettings('bozuk')).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings([1, 2])).toEqual(DEFAULT_SETTINGS);
   });
+
+  it('varsayilan nesneyi paylasmaz', () => {
+    expect(parseSettings(null)).not.toBe(DEFAULT_SETTINGS);
+  });
 });
