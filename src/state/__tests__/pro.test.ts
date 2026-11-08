@@ -27,4 +27,9 @@ describe('Pro kaydi', () => {
   it('omur boyu plan hep aktif', () => {
     expect(isProActive({ plan: 'lifetime', until: null })).toBe(true);
   });
+
+  it('abonelik bitis anina kadar aktif', () => {
+    expect(isProActive({ plan: 'weekly', until: 100 }, 99)).toBe(true);
+    expect(isProActive({ plan: 'weekly', until: 100 }, 100)).toBe(false);
+  });
 });
