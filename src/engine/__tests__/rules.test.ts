@@ -40,4 +40,8 @@ describe('motor kurallari', () => {
   it('ayni seed ayni havayi verir', () => {
     expect(createGame(77, 'hard').weather).toBe(createGame(77, 'hard').weather);
   });
+
+  it('secilen hava zorlanir', () => {
+    expect(createGame(5, 'easy', { weather: 'fog' }).weather).toBe('fog');
+  });
 });
