@@ -38,4 +38,8 @@ describe('parseProgress', () => {
   it('metin olarak gelen jeton reddedilir', () => {
     expect(parseProgress({ tokens: '9999' }).tokens).toBe(START_TOKENS);
   });
+
+  it('rekorlar zorluga gore okunur', () => {
+    expect(parseProgress({ best: { easy: 10, normal: 20, hard: 30 } }).best).toEqual({ easy: 10, normal: 20, hard: 30 });
+  });
 });
