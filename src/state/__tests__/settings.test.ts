@@ -42,4 +42,8 @@ describe('parseSettings', () => {
   it('noktali kimlik kabul edilir', () => {
     expect(parseSettings({ crane: 'crane.red' }).crane).toBe('crane.red');
   });
+
+  it('tanimsiz dil cihaz diline birakilir', () => {
+    expect(parseSettings({ lang: 'de' }).lang).toBeNull();
+  });
 });
