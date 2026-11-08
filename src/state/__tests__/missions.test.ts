@@ -44,4 +44,9 @@ describe('gorevler', () => {
       expect(x.reward).toBeGreaterThan(0);
     }
   });
+
+  it('art arda mukemmel en iyiyi tutar', () => {
+    expect(advance(m('perfectStreak'), 4, run({ perfectStreak: 2 }))).toBe(4);
+    expect(advance(m('perfectStreak'), 4, run({ perfectStreak: 6 }))).toBe(6);
+  });
 });
