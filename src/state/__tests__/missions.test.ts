@@ -37,4 +37,11 @@ describe('gorevler', () => {
   it('kimlik tur ve hedeften olusur', () => {
     for (const x of missionsFor('2026-12-01')) expect(x.id).toBe(`${x.kind}.${x.target}`);
   });
+
+  it('hedef ve odul pozitif', () => {
+    for (const x of missionsFor('2026-12-02')) {
+      expect(x.target).toBeGreaterThan(0);
+      expect(x.reward).toBeGreaterThan(0);
+    }
+  });
 });
