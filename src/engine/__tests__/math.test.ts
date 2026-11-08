@@ -25,4 +25,8 @@ describe('matematik', () => {
   it('clamp ust sinira ceker', () => {
     expect(clamp(15, 0, 10)).toBe(10);
   });
+
+  it('clamp araliktaki degeri korur', () => {
+    expect(clamp(7, 0, 10)).toBe(7);
+  });
 });
