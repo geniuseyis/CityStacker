@@ -34,4 +34,8 @@ describe('parseProgress', () => {
     expect(parseProgress({ tokens: Infinity }).tokens).toBe(START_TOKENS);
     expect(parseProgress({ tokens: NaN }).tokens).toBe(START_TOKENS);
   });
+
+  it('metin olarak gelen jeton reddedilir', () => {
+    expect(parseProgress({ tokens: '9999' }).tokens).toBe(START_TOKENS);
+  });
 });
