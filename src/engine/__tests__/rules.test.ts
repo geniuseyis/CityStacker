@@ -51,4 +51,11 @@ describe('motor kurallari', () => {
     step(s);
     expect(s.tick).toBe(2);
   });
+
+  it('birakma girdiyi kaydeder', () => {
+    const s = createGame(2, 'normal', { weather: 'clear' });
+    for (let i = 0; i < 120 && s.phase !== 'swinging'; i++) step(s);
+    expect(drop(s)).toBe(true);
+    expect(s.inputs[0].kind).toBe('drop');
+  });
 });
