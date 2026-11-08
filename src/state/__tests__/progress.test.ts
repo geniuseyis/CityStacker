@@ -17,4 +17,8 @@ describe('parseProgress', () => {
   it('jeton yoksa baslangic jetonu verilir', () => {
     expect(parseProgress({}).tokens).toBe(START_TOKENS);
   });
+
+  it('negatif jeton sifirlanir', () => {
+    expect(parseProgress({ tokens: -50 }).tokens).toBe(0);
+  });
 });
