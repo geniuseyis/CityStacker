@@ -17,4 +17,8 @@ describe('matematik', () => {
   it('dcos Math.cos ile uyusur', () => {
     for (let x = -10; x <= 10; x += 0.211) expect(dcos(x)).toBeCloseTo(Math.cos(x), 8);
   });
+
+  it('clamp alt sinira ceker', () => {
+    expect(clamp(-5, 0, 10)).toBe(0);
+  });
 });
