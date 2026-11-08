@@ -2,7 +2,7 @@ import { continueRun, createGame, drop, step } from './game';
 import type { Difficulty, GameState, Input, Weather } from './types';
 
 export type RunRecord = {
-  v: 1;
+  v: 5;
   seed: number;
   difficulty: Difficulty;
   weather: Weather;
@@ -13,7 +13,7 @@ export type RunRecord = {
 
 export function toRecord(s: GameState): RunRecord {
   return {
-    v: 1,
+    v: 5,
     seed: s.seed,
     difficulty: s.difficulty,
     weather: s.weather,
@@ -48,7 +48,7 @@ export function simulate(
 }
 
 export function verify(r: RunRecord): boolean {
-  if (r.v !== 1 || !Array.isArray(r.inputs)) return false;
+  if (r.v !== 5 || !Array.isArray(r.inputs)) return false;
   for (let k = 1; k < r.inputs.length; k++) {
     if (r.inputs[k].tick < r.inputs[k - 1].tick) return false;
   }
