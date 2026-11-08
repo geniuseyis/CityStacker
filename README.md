@@ -29,7 +29,7 @@ iOS ve Android için modern bir kule oyunu.
   <tr>
     <td width="50%" valign="top">
       <h4>🏗️&nbsp; Gerçek fizik</h4>
-      Sarkaç, momentum, ağırlık merkezi ve esneyen bir kule. Kat düz oturur, kenarı aşarsa devrilir.
+      Sarkaç, momentum ve esneyen bir kule. Her kat alttakine oturur, kenarı aşarsa devrilir.
     </td>
     <td width="50%" valign="top">
       <h4>🌦️&nbsp; Her oyun başka bir gökyüzü</h4>
@@ -69,10 +69,10 @@ iOS ve Android için modern bir kule oyunu.
 
 | Alan | Özellikler |
 | :-- | :-- |
-| **Oynanış** | Gerçek sarkaç · bırakınca korunan momentum · ağırlık merkezine göre devrilme ve kule bölümü yıkılması · esneyen kule · mükemmel / iyi / normal isabet ve kombo · nişan yardımı |
+| **Oynanış** | Gerçek sarkaç · bırakınca korunan momentum · kenarı aşan katın devrilmesi · esneyen kule · mükemmel / iyi / normal isabet ve kombo · nişan yardımı |
 | **Modlar** | Sonsuz (kolay / normal / zor) · Günün Kulesi (herkes için aynı seed ve hava) · Hayalet (rekor koşusuyla yarış) |
 | **Hava** | Açık · Rüzgârlı ×1,2 · Fırtına ×1,5 (esinti, yağmur, şimşek) · Sisli ×1,15 |
-| **Devam** | Bedava ek hak yok; her kayıpta jetonla hak (1, 2, 3… jeton, oyun başına en fazla 5) · reklamla bir kez ücretsiz · yanlışlıkla basmaya karşı korumalı |
+| **Haklar** | 3 kalple başlanır; bitince jetonla devam (1, 2, 3… jeton, oyun başına en fazla 5) · reklamla bir kez ücretsiz · yanlışlıkla basmaya karşı korumalı |
 | **Günlük** | 7 günlük giriş serisi (2 → 12 jeton) · her gün 3 görev · reklam izleyerek jeton (günde 5) |
 | **Mağaza** | 4 jeton paketi · başlangıç paketi · 7 kat stili · 5 vinç rengi · Türkiye'ye yerel TL fiyatları |
 | **Plumbline Pro** | Haftalık, aylık ve ömür boyu · reklam yok · her oyunda 1 ücretsiz hak · her hafta 10 jeton · tüm gökyüzleri ve altın kat stili |
@@ -92,8 +92,7 @@ Oyun mantığı `src/engine` altında, React'ten ve çizimden tamamen bağımsı
 | :-- | :-- |
 | **Sarkaç** | θ'' = (−g · sin θ + a<sub>rüzgâr</sub> · cos θ) / L. Vinç katı hep kulenin hemen üstüne indirir; ilk katlarda ip uzun, salınım yavaş. |
 | **Bırakış** | Kat ip ucunun hızıyla ayrılır, yerçekimi ve yan rüzgârla parabol çizer. |
-| **Devrilme** | Kat alttakinin üstüne düz oturur. Merkezi alttaki katın kenarını aşarsa kenardan devrilir. |
-| **Yıkılma** | Her yerleşimde her katın üstündeki bölümün ağırlık merkezi kontrol edilir; desteği aşan bölüm kenar etrafında dönerek düşer. |
+| **Devrilme** | Kat alttakinin üstüne düz oturur. Merkezi alttaki katın kenarını aşarsa kenardan devrilir ve tepeden kat koparır: tepe düzse bir, zaten kaçıksa iki kat. |
 | **Esneme** | Kule sönümlü bir yay gibi salınır; sehim yükseklikle büyür. Kaçık iniş sallar, tam oturan kat sakinleştirir. |
 
 Fizik 390 × 844'lük sanal bir alanda, 1/120 sn sabit adımla çalışır; renderer bunu cihaza ölçekler, telefon ve tablette oyun aynıdır.
@@ -166,7 +165,7 @@ flowchart LR
 
 ## Gelir modeli
 
-Bedava ek hak yok: her kayıpta jetonla hak alınır. Jetonlar satın alınır ya da günlük seri, görevler ve reklam izleyerek kazanılır. Plumbline Pro reklamları kaldırır.
+Oyun 3 kalple başlar; kalpler bitince jetonla devam edilir. Jetonlar satın alınır ya da günlük seri, görevler ve reklam izleyerek kazanılır. Plumbline Pro reklamları kaldırır.
 
 | | ABD | Türkiye |
 | :-- | :-- | :-- |
@@ -191,7 +190,7 @@ Gizlilik politikası: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 ## Test
 
-Motorun 17 testi: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kule bölümünün yıkılması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
+Motorun testleri: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kaçık katların kuleyi yıkmaması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
 
 <br>
 
