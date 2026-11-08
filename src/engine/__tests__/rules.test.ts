@@ -44,4 +44,11 @@ describe('motor kurallari', () => {
   it('secilen hava zorlanir', () => {
     expect(createGame(5, 'easy', { weather: 'fog' }).weather).toBe('fog');
   });
+
+  it('adim sayaci her adimda artar', () => {
+    const s = createGame(2, 'normal', { weather: 'clear' });
+    step(s);
+    step(s);
+    expect(s.tick).toBe(2);
+  });
 });
