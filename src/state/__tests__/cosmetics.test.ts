@@ -6,4 +6,10 @@ describe('kozmetik', () => {
   it('ucretsiz urun her zaman sahiplidir', () => {
     expect(isOwned(SKINS[0], [], false, false)).toBe(true);
   });
+
+  it('jetonlu urun satin alinmadan sahipli degil', () => {
+    const glass = skinByKey('glass');
+    expect(isOwned(glass, [], true, true)).toBe(false);
+    expect(isOwned(glass, [glass.id], false, false)).toBe(true);
+  });
 });
