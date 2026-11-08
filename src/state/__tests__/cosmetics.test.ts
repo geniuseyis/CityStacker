@@ -18,4 +18,9 @@ describe('kozmetik', () => {
     expect(isOwned(gold, [], false, false)).toBe(false);
     expect(isOwned(gold, [], true, false)).toBe(true);
   });
+
+  it('pro urunu listeye yazilarak acilamaz', () => {
+    const gold = skinByKey('gold');
+    expect(isOwned(gold, [gold.id], false, false)).toBe(false);
+  });
 });
