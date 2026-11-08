@@ -37,4 +37,9 @@ describe('kozmetik', () => {
   it('bilinmeyen vinc rengi tema rengine doner', () => {
     expect(craneByKey('yok').key).toBe('theme');
   });
+
+  it('kimlikler tekildir', () => {
+    const ids = [...SKINS, ...CRANES].map((x) => x.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
