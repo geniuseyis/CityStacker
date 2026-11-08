@@ -61,7 +61,7 @@ iOS ve Android için modern bir kule oyunu.
 <p align="center"><img src="docs/screenshots/07-pro.jpg" width="100%" alt="Plumbline Pro: reklamsız, kesintisiz"></p>
 <p align="center"><img src="docs/screenshots/08-share.jpg" width="100%" alt="Paylaş: kuleni göster"></p>
 
-<p align="center"><sub>Telefon ekranları, uygulamanın Android emülatöründen alınmış gerçek görüntüleridir. Kartlar <code>scripts/readme-art.js</code> ile çiziliyor.</sub></p>
+<p align="center"><sub>Telefon ekranları, uygulamanın Android emülatöründen alınmış gerçek görüntüleridir.</sub></p>
 
 <details>
 <summary><b>Tüm özellikler</b></summary>
