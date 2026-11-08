@@ -178,7 +178,7 @@ Gizlilik politikası: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 ## Test
 
-Motorun testleri: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kaçık katların kuleyi yıkmaması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
+Motor, kayıt şeması, görevler, kozmetik, renk yardımcıları ve dil sözlükleri için birim testleri var. Motorun testleri: sarkaç enerjisi ve periyodu, bırakılan katın momentumu, kusursuz kule, kenardan devrilme, kaçık katların kuleyi yıkmaması, devam hakları, rüzgârın düşen kata etkisi, her hava olayında replay doğrulaması, hayaletin rekoru birebir tekrar etmesi ve bozuk kayıtların reddedilmesi.
 
 <br>
 
