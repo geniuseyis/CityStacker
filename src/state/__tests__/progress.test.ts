@@ -116,4 +116,9 @@ describe('parseProgress', () => {
   it('reklam jetonu tarihi bozuksa silinir', () => {
     expect(parseProgress({ adTokens: { date: 3, count: 1 } }).adTokens).toBeNull();
   });
+
+  it('egitim bayragi yalnizca boolean kabul eder', () => {
+    expect(parseProgress({ tutorialDone: 'evet' }).tutorialDone).toBe(false);
+    expect(parseProgress({ tutorialDone: true }).tutorialDone).toBe(true);
+  });
 });
