@@ -46,4 +46,8 @@ describe('parseProgress', () => {
   it('eksik rekor sifir sayilir', () => {
     expect(parseProgress({ best: { hard: 5 } }).best).toEqual({ easy: 0, normal: 0, hard: 5 });
   });
+
+  it('liste olmayan oyun gecmisi bosalir', () => {
+    expect(parseProgress({ runs: 'x' }).runs).toEqual([]);
+  });
 });
