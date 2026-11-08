@@ -32,4 +32,8 @@ describe('parseRecord', () => {
     const inputs = Array.from({ length: 3001 }, (_, i) => ({ tick: i, kind: 'drop' }));
     expect(parseRecord(rec({ inputs }))).toBeNull();
   });
+
+  it('bilinmeyen hava reddedilir', () => {
+    expect(parseRecord(rec({ weather: 'kar' }))).toBeNull();
+  });
 });
