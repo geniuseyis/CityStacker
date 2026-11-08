@@ -16,4 +16,11 @@ describe('sozlukler', () => {
   it('bos metin yok', () => {
     for (const d of [tr, en]) for (const v of Object.values(d)) expect(v.trim()).not.toBe('');
   });
+
+  it('oyun bitis nedenlerinin metni var', () => {
+    for (const k of ['reason.miss', 'reason.tipped'] as const) {
+      expect(tr[k]).toBeTruthy();
+      expect(en[k]).toBeTruthy();
+    }
+  });
 });
