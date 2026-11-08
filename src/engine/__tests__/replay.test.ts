@@ -76,4 +76,12 @@ describe('replay', () => {
     const s = play(20);
     expect(simulate(s.seed, s.difficulty, s.inputs, s.weather).events).toHaveLength(0);
   });
+
+  it('hayalet rekor kosusunu birebir tekrarlar', () => {
+    const s = play(21);
+    const g = makeGhost(toRecord(s));
+    while (g.s.tick < s.tick) stepGhost(g);
+    expect(g.s.score).toBe(s.score);
+    expect(g.s.blocks.length).toBe(s.blocks.length);
+  });
 });
