@@ -25,4 +25,8 @@ describe('parseProgress', () => {
   it('jeton ust siniri asamaz', () => {
     expect(parseProgress({ tokens: 1e12 }).tokens).toBe(MAX_TOKENS);
   });
+
+  it('kesirli jeton asagi yuvarlanir', () => {
+    expect(parseProgress({ tokens: 7.9 }).tokens).toBe(7);
+  });
 });
