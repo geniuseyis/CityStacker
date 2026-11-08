@@ -29,4 +29,9 @@ describe('parseProgress', () => {
   it('kesirli jeton asagi yuvarlanir', () => {
     expect(parseProgress({ tokens: 7.9 }).tokens).toBe(7);
   });
+
+  it('sonsuz jeton kabul edilmez', () => {
+    expect(parseProgress({ tokens: Infinity }).tokens).toBe(START_TOKENS);
+    expect(parseProgress({ tokens: NaN }).tokens).toBe(START_TOKENS);
+  });
 });
