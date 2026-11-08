@@ -83,4 +83,8 @@ describe('parseProgress', () => {
   it('sahip olunanlarda gecersiz kimlikler atilir', () => {
     expect(parseProgress({ owned: ['skin.glass', 'SKIN', 3, '../x'] }).owned).toEqual(['skin.glass']);
   });
+
+  it('sahip olunanlar 100 ile sinirli', () => {
+    expect(parseProgress({ owned: Array.from({ length: 150 }, () => 'skin.glass') }).owned).toHaveLength(100);
+  });
 });
