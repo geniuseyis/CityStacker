@@ -86,4 +86,10 @@ describe('motor kurallari', () => {
     expect(canContinue(s)).toBe(false);
     expect(continueRun(s)).toBe(false);
   });
+
+  it('devam sinirina gelince devam edilemez', () => {
+    const s = over();
+    s.continues = MAX_CONTINUES;
+    expect(canContinue(s)).toBe(false);
+  });
 });
