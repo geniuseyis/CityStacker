@@ -63,4 +63,8 @@ describe('parseProgress', () => {
   it('gecmiste bilinmeyen zorluk normal olur', () => {
     expect(parseProgress({ runs: [{ difficulty: 'x' }] }).runs[0].difficulty).toBe('normal');
   });
+
+  it('gecersiz gunluk tarih alani yazilmaz', () => {
+    expect(parseProgress({ runs: [{ daily: '08/11/2026' }] }).runs[0]).not.toHaveProperty('daily');
+  });
 });
