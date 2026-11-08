@@ -23,4 +23,8 @@ describe('renk yardimcilari', () => {
     expect(smooth(0, 10, -5)).toBe(0);
     expect(smooth(0, 10, 50)).toBe(1);
   });
+
+  it('smooth ortada yarim', () => {
+    expect(smooth(0, 10, 5)).toBe(0.5);
+  });
 });
