@@ -5,4 +5,12 @@ describe('parseProgress', () => {
   it('bozuk kayit varsayilan ilerlemeye doner', () => {
     expect(parseProgress(undefined)).toEqual(DEFAULT_PROGRESS);
   });
+
+  it('varsayilan listeleri paylasmaz', () => {
+    const p = parseProgress(null);
+    p.owned.push('skin.glass');
+    p.best.easy = 9;
+    expect(DEFAULT_PROGRESS.owned).toEqual([]);
+    expect(DEFAULT_PROGRESS.best.easy).toBe(0);
+  });
 });
