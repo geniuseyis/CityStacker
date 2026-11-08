@@ -21,4 +21,8 @@ describe('parseProgress', () => {
   it('negatif jeton sifirlanir', () => {
     expect(parseProgress({ tokens: -50 }).tokens).toBe(0);
   });
+
+  it('jeton ust siniri asamaz', () => {
+    expect(parseProgress({ tokens: 1e12 }).tokens).toBe(MAX_TOKENS);
+  });
 });
