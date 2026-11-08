@@ -59,4 +59,8 @@ describe('parseProgress', () => {
   it('gecmiste nesne olmayan satirlar atilir', () => {
     expect(parseProgress({ runs: [1, null, { score: 5 }] }).runs).toHaveLength(1);
   });
+
+  it('gecmiste bilinmeyen zorluk normal olur', () => {
+    expect(parseProgress({ runs: [{ difficulty: 'x' }] }).runs[0].difficulty).toBe('normal');
+  });
 });
