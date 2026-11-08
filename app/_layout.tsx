@@ -66,46 +66,10 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="play" options={{ gestureEnabled: false, animation: 'fade' }} />
-          <Stack.Screen
-            name="settings"
-            options={{
-              presentation: 'formSheet',
-              sheetAllowedDetents: [0.92],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 28,
-              animation: 'slide_from_bottom',
-            }}
-          />
-          <Stack.Screen
-            name="records"
-            options={{
-              presentation: 'formSheet',
-              sheetAllowedDetents: [0.92],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 28,
-              animation: 'slide_from_bottom',
-            }}
-          />
-          <Stack.Screen
-            name="daily"
-            options={{
-              presentation: 'formSheet',
-              sheetAllowedDetents: [0.92],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 28,
-              animation: 'slide_from_bottom',
-            }}
-          />
-          <Stack.Screen
-            name="shop"
-            options={{
-              presentation: 'formSheet',
-              sheetAllowedDetents: [0.92],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 28,
-              animation: 'slide_from_bottom',
-            }}
-          />
+          <Stack.Screen name="settings" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="records" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="daily" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="shop" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="pro" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         </Stack>
         {__DEV__ && <AdHost />}
