@@ -18,4 +18,11 @@ describe('replay', () => {
     expect(s.phase).toBe('over');
     expect(verify(toRecord(s))).toBe(true);
   });
+
+  it('kayit girdileri kopyalar', () => {
+    const s = play(12);
+    const r = toRecord(s);
+    expect(r.inputs).not.toBe(s.inputs);
+    expect(r.inputs).toEqual(s.inputs);
+  });
 });
