@@ -112,4 +112,13 @@ describe('motor kurallari', () => {
     expect(levelTop(0) - levelTop(1)).toBe(BLOCK);
     expect(levelTop(0)).toBe(GROUND_Y - BLOCK);
   });
+
+  it('ip ucu ekran icinde baslar', () => {
+    const s = createGame(4, 'normal', { weather: 'clear' });
+    for (let i = 0; i < 240; i++) step(s);
+    const e = ropeEnd(s)!;
+    expect(e.x).toBeGreaterThan(0);
+    expect(e.x).toBeLessThan(VIEW_W);
+    expect(e.y).toBeLessThan(VIEW_H);
+  });
 });
