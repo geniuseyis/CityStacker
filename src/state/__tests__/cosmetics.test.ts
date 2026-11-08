@@ -46,4 +46,9 @@ describe('kozmetik', () => {
   it('kimlikler kayit kuralina uyar', () => {
     for (const x of [...SKINS, ...CRANES]) expect(x.id).toMatch(/^[a-z0-9.]{1,40}$/);
   });
+
+  it('varsayilan ayarlar katalogda vardir', () => {
+    expect(skinByKey(DEFAULT_SETTINGS.skin).key).toBe(DEFAULT_SETTINGS.skin);
+    expect(craneByKey(DEFAULT_SETTINGS.crane).key).toBe(DEFAULT_SETTINGS.crane);
+  });
 });
