@@ -33,4 +33,8 @@ describe('kozmetik', () => {
   it('bilinmeyen kat stili klasige doner', () => {
     expect(skinByKey('yok').key).toBe('classic');
   });
+
+  it('bilinmeyen vinc rengi tema rengine doner', () => {
+    expect(craneByKey('yok').key).toBe('theme');
+  });
 });
