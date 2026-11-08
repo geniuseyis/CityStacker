@@ -34,4 +34,8 @@ describe('parseSettings', () => {
   it('buyuk harfli tema kimligi reddedilir', () => {
     expect(parseSettings({ theme: 'DUSK' }).theme).toBe(DEFAULT_SETTINGS.theme);
   });
+
+  it('cok uzun kimlik reddedilir', () => {
+    expect(parseSettings({ skin: 'a'.repeat(41) }).skin).toBe(DEFAULT_SETTINGS.skin);
+  });
 });
