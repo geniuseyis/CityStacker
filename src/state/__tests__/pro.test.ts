@@ -15,4 +15,8 @@ describe('Pro kaydi', () => {
   it('bitisi olmayan abonelik sure dolmus sayilir', () => {
     expect(pro({ plan: 'weekly' })).toEqual({ plan: 'weekly', until: 0 });
   });
+
+  it('sonsuz bitis tarihi kabul edilmez', () => {
+    expect(pro({ plan: 'monthly', until: Infinity })).toEqual({ plan: 'monthly', until: 0 });
+  });
 });
