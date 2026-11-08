@@ -50,4 +50,8 @@ describe('matematik', () => {
     nextRandom(st);
     expect(st.rng).not.toBe(1);
   });
+
+  it('bos metnin seedi FNV baslangicidir', () => {
+    expect(seedFromString('')).toBe(0x811c9dc5);
+  });
 });
