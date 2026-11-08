@@ -70,4 +70,8 @@ describe('motor kurallari', () => {
   it('oyun bitince birakma calismaz', () => {
     expect(drop(over())).toBe(false);
   });
+
+  it('devam ilk seferde 1 jeton', () => {
+    expect(continueCost(over())).toBe(1);
+  });
 });
