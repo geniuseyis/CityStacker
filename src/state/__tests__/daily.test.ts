@@ -10,4 +10,8 @@ describe('gunluk kule', () => {
   it('aralik ayi 12 olarak yazilir', () => {
     expect(todayKey(new Date(2026, 11, 31))).toBe('2026-12-31');
   });
+
+  it('ayni gun ayni seed', () => {
+    expect(dailySeed('2026-11-08')).toBe(dailySeed('2026-11-08'));
+  });
 });
