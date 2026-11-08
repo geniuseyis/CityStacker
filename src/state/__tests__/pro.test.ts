@@ -11,4 +11,8 @@ describe('Pro kaydi', () => {
   it('omur boyu planda bitis tarihi yok sayilir', () => {
     expect(pro({ plan: 'lifetime', until: 5 })).toEqual({ plan: 'lifetime', until: null });
   });
+
+  it('bitisi olmayan abonelik sure dolmus sayilir', () => {
+    expect(pro({ plan: 'weekly' })).toEqual({ plan: 'weekly', until: 0 });
+  });
 });
