@@ -87,4 +87,8 @@ describe('parseProgress', () => {
   it('sahip olunanlar 100 ile sinirli', () => {
     expect(parseProgress({ owned: Array.from({ length: 150 }, () => 'skin.glass') }).owned).toHaveLength(100);
   });
+
+  it('seri gunu 7yi asamaz', () => {
+    expect(parseProgress({ streak: { day: 50 } }).streak.day).toBe(7);
+  });
 });
