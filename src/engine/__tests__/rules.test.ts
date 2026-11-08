@@ -92,4 +92,13 @@ describe('motor kurallari', () => {
     s.continues = MAX_CONTINUES;
     expect(canContinue(s)).toBe(false);
   });
+
+  it('devam bir hak verir ve komboyu sifirlar', () => {
+    const s = over();
+    s.combo = 6;
+    expect(continueRun(s)).toBe(true);
+    expect(s.lives).toBe(1);
+    expect(s.combo).toBe(0);
+    expect(s.continues).toBe(1);
+  });
 });
