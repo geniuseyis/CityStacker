@@ -7,4 +7,8 @@ describe('Pro kaydi', () => {
   it('bilinmeyen plan silinir', () => {
     expect(pro({ plan: 'bedava', until: 99 })).toBeNull();
   });
+
+  it('omur boyu planda bitis tarihi yok sayilir', () => {
+    expect(pro({ plan: 'lifetime', until: 5 })).toEqual({ plan: 'lifetime', until: null });
+  });
 });
