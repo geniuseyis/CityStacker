@@ -48,4 +48,8 @@ describe('parseRecord', () => {
   it('negatif adim sifira cekilir', () => {
     expect(parseRecord(rec({ inputs: [{ tick: -4, kind: 'drop' }] }))?.inputs[0].tick).toBe(0);
   });
+
+  it('sayi olmayan adim reddedilir', () => {
+    expect(parseRecord(rec({ inputs: [{ tick: 'a', kind: 'drop' }] }))).toBeNull();
+  });
 });
