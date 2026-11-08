@@ -61,4 +61,9 @@ describe('parseRecord', () => {
   it('seed 32 bit ile sinirli', () => {
     expect(parseRecord(rec({ seed: 2 ** 40 }))?.seed).toBe(0xffffffff);
   });
+
+  it('zorlugu tutmayan hayalet yuklenmez', () => {
+    const p = parseProgress({ ghosts: { hard: rec({ difficulty: 'easy' }) } });
+    expect(p.ghosts.hard).toBeUndefined();
+  });
 });
