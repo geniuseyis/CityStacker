@@ -67,4 +67,8 @@ describe('parseProgress', () => {
   it('gecersiz gunluk tarih alani yazilmaz', () => {
     expect(parseProgress({ runs: [{ daily: '08/11/2026' }] }).runs[0]).not.toHaveProperty('daily');
   });
+
+  it('gecerli gunluk tarih korunur', () => {
+    expect(parseProgress({ runs: [{ daily: '2026-11-08' }] }).runs[0].daily).toBe('2026-11-08');
+  });
 });
