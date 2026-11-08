@@ -2,6 +2,7 @@ import {
   BLOCK,
   BLOCK_STYLES,
   CAMERA_LERP,
+  COMBO_TIME,
   DESIRED_TOP_Y,
   DIFFICULTY,
   GOOD_TOL,
@@ -12,10 +13,10 @@ import {
   MAX_CONTINUES,
   PERFECT_TOL,
   PIVOT_Y,
-  RESPAWN_DELAY,
   ROPE_MAX,
   ROPE_MIN,
   SCORE,
+  SPEED_WINDOW,
   STEP,
   SWING_BASE,
   SWING_MAX,
@@ -29,7 +30,7 @@ import {
   WEATHER,
 } from './constants';
 import { clamp, dcos, dsin, nextRandom } from './math';
-import type { Difficulty, GameState, Grade, Hanging, OverReason, ToppledBlock, Weather } from './types';
+import type { Difficulty, FallenBlock, GameState, Grade, Hanging, OverReason, Weather } from './types';
 
 const HALF = BLOCK / 2;
 
@@ -50,7 +51,6 @@ export function createGame(seed: number, difficulty: Difficulty, opts: { weather
     phase: 'swinging',
     overReason: null,
     lastLoss: null,
-    waitT: 0,
     blocks: [],
     cur: null,
     rope: ROPE_MAX,
@@ -70,6 +70,8 @@ export function createGame(seed: number, difficulty: Difficulty, opts: { weather
     camYTarget: 0,
     score: 0,
     combo: 0,
+    comboT: 0,
+    spawnTick: 0,
     bestCombo: 0,
     perfects: 0,
     lives: LIVES_MAX,
@@ -155,6 +157,7 @@ function spawn(s: GameState) {
   const h: Hanging = { x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0, style: n % BLOCK_STYLES, lit };
   hangPosition(s, h);
   s.cur = h;
+  s.spawnTick = s.tick;
   s.phase = 'swinging';
 }
 
@@ -182,6 +185,7 @@ export function continueRun(s: GameState): boolean {
   s.overReason = null;
   s.lastLoss = null;
   s.combo = 0;
+  s.comboT = 0;
   s.wob = 0;
   s.wobV = 0;
   retargetCamera(s);
@@ -196,6 +200,7 @@ function loseLife(s: GameState, reason: OverReason) {
   s.lastLoss = reason;
   s.lives -= 1;
   s.combo = 0;
+  s.comboT = 0;
 }
 
 function afterLoss(s: GameState, reason: OverReason) {
@@ -209,6 +214,23 @@ function afterLoss(s: GameState, reason: OverReason) {
     s.overReason = reason;
     s.events.push({ type: 'over', reason });
   }
+}
+
+// Kenardan düşen kat tepeden kat koparır: tepe zaten kaçıksa iki, düzse bir kat.
+// En alttaki kat her zaman yerinde kalır.
+function knockFloors(s: GameState, dir: 1 | -1) {
+  const n = s.blocks.length;
+  if (n < 2) return;
+  const wayward = Math.abs(s.blocks[n - 1].cx - s.blocks[n - 2].cx) > GOOD_TOL * DIFFICULTY[s.difficulty].tol;
+  const count = Math.min(wayward ? 2 : 1, n - 1);
+  const blocks: FallenBlock[] = [];
+  for (let i = n - count; i < n; i++) {
+    const b = s.blocks[i];
+    blocks.push({ x: blockViewX(s, i) - HALF, y: levelTop(i) + s.camY, style: b.style, lit: b.lit });
+  }
+  s.blocks.length = n - count;
+  s.wobV -= dir * 30; // kopan katların tepkisi
+  s.events.push({ type: 'knock', dir, blocks });
 }
 
 function land(s: GameState) {
@@ -241,18 +263,21 @@ function land(s: GameState) {
       cur.vx = dir * 70;
       cur.vr = dir * 150;
       s.events.push({ type: 'miss', livesLeft: s.lives, x, y: cur.y, tipped: true });
+      knockFloors(s, dir);
       return;
     }
+    // mükemmel iniş tam ortaya oturur
+    if (ad <= PERFECT_TOL * diff.tol) d = 0;
     cx = s.blocks[n - 1].cx + d;
   }
 
+  const a = Math.abs(x - (n > 0 ? blockViewX(s, n - 1) : VIEW_W / 2 + s.camX));
   s.blocks.push({ level: n, cx, style: cur.style, lit: cur.lit });
   s.cur = null;
 
   // darbe: kaçıklık ve katın yatay momentumu kuleyi esnetir
   if (n > 0) s.wobV += d * WOBBLE_IMPULSE + cur.vx * 0.08;
 
-  const a = Math.abs(d);
   let points: number;
   let grade: Grade;
   if (a <= PERFECT_TOL * diff.tol) {
@@ -272,55 +297,22 @@ function land(s: GameState) {
     points = SCORE.ok;
     grade = 'ok';
   }
+  if (grade === 'ok') {
+    s.comboT = 0;
+  } else {
+    s.comboT = COMBO_TIME;
+    // hızlı ve isabetli yerleştirme: mükemmelde tam, iyide yarım
+    const elapsed = (s.tick - s.spawnTick) * STEP;
+    const speed = SCORE.speedMax * Math.max(0, 1 - elapsed / SPEED_WINDOW);
+    points += grade === 'perfect' ? speed : speed / 2;
+  }
   points = Math.round(points * WEATHER[s.weather].score);
   s.score += points;
   if (s.combo > s.bestCombo) s.bestCombo = s.combo;
   s.events.push({ type: 'land', grade, combo: s.combo, points, x, y: cur.y });
 
-  if (checkStability(s)) return;
-
   retargetCamera(s);
   spawn(s);
-}
-
-// Her kat için: üstündeki bölümün ağırlık merkezi bu katın üst yüzeyinin
-// içinde mi? Değilse o bölüm kenar etrafında devrilir. En alttaki kopma noktası esas.
-function checkStability(s: GameState): boolean {
-  const b = s.blocks;
-  const n = b.length;
-  if (n < 2) return false;
-
-  // sondan başa birikimli toplam: sum[j] = cx[j] + ... + cx[n-1]
-  const sums = new Array<number>(n + 1).fill(0);
-  for (let j = n - 1; j >= 0; j--) sums[j] = sums[j + 1] + b[j].cx;
-
-  for (let j = 1; j < n; j++) {
-    const com = sums[j] / (n - j);
-    const off = com - b[j - 1].cx;
-    if (Math.abs(off) > HALF) {
-      topple(s, j, off > 0 ? 1 : -1);
-      return true;
-    }
-  }
-  return false;
-}
-
-function topple(s: GameState, from: number, dir: 1 | -1) {
-  const sup = from - 1;
-  const pivotX = blockViewX(s, sup) + dir * HALF;
-  const pivotY = levelTop(sup) + s.camY;
-  const blocks: ToppledBlock[] = [];
-  for (let i = from; i < s.blocks.length; i++) {
-    const bl = s.blocks[i];
-    blocks.push({ x: blockViewX(s, i) - HALF, y: levelTop(i) + s.camY, style: bl.style, lit: bl.lit });
-  }
-  s.blocks.length = from;
-  loseLife(s, 'collapse');
-  s.wobV -= dir * 30; // kopan yükün tepkisi
-  s.cur = null;
-  s.phase = 'settling';
-  s.waitT = RESPAWN_DELAY + 0.5;
-  s.events.push({ type: 'topple', livesLeft: s.lives, dir, pivotX, pivotY, blocks });
 }
 
 /* ------------------------------ adım ------------------------------ */
@@ -337,6 +329,14 @@ export function step(s: GameState) {
   s.wob += s.wobV * dt;
   s.windT += WIND_SPEED * dt;
 
+  if (s.comboT > 0) {
+    s.comboT -= dt;
+    if (s.comboT <= 0) {
+      s.comboT = 0;
+      s.combo = 0;
+    }
+  }
+
   // fırtına: arada bir ani esinti, yavaşça söner; kuleyi de iter
   if (WEATHER[s.weather].gusts) {
     s.gustT -= dt;
@@ -352,16 +352,10 @@ export function step(s: GameState) {
   }
 
   // kamera sadece kat havada değilken kayar, iniş noktası sabit kalsın
-  if (s.phase === 'swinging' || s.phase === 'settling') {
+  if (s.phase === 'swinging') {
     const k = Math.min(1, dt * CAMERA_LERP);
     s.camX += (s.camXTarget - s.camX) * k;
     s.camY += (s.camYTarget - s.camY) * k;
-  }
-
-  if (s.phase === 'settling') {
-    s.waitT -= dt;
-    if (s.waitT <= 0) afterLoss(s, 'collapse');
-    return;
   }
 
   const cur = s.cur;
