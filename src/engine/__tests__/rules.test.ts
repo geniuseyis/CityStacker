@@ -36,4 +36,8 @@ describe('motor kurallari', () => {
     expect(s.score).toBe(0);
     expect(s.combo).toBe(0);
   });
+
+  it('ayni seed ayni havayi verir', () => {
+    expect(createGame(77, 'hard').weather).toBe(createGame(77, 'hard').weather);
+  });
 });
