@@ -42,4 +42,8 @@ describe('kozmetik', () => {
     const ids = [...SKINS, ...CRANES].map((x) => x.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it('kimlikler kayit kuralina uyar', () => {
+    for (const x of [...SKINS, ...CRANES]) expect(x.id).toMatch(/^[a-z0-9.]{1,40}$/);
+  });
 });
