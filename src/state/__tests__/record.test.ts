@@ -66,4 +66,9 @@ describe('parseRecord', () => {
     const p = parseProgress({ ghosts: { hard: rec({ difficulty: 'easy' }) } });
     expect(p.ghosts.hard).toBeUndefined();
   });
+
+  it('zorlugu tutan hayalet yuklenir', () => {
+    const p = parseProgress({ ghosts: { normal: rec() } });
+    expect(p.ghosts.normal?.seed).toBe(42);
+  });
 });
