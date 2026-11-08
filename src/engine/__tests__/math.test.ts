@@ -9,4 +9,8 @@ describe('matematik', () => {
   it('dsin sifirda sifir', () => {
     expect(dsin(0)).toBe(0);
   });
+
+  it('dsin tek fonksiyondur', () => {
+    expect(dsin(-1.2)).toBeCloseTo(-dsin(1.2), 12);
+  });
 });
