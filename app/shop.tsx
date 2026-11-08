@@ -98,7 +98,7 @@ export default function Shop() {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={{ gap: 2 }}>
           <T v="title">{t('dockShop')}</T>
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: space.lg,
-    paddingTop: space.xl,
+    paddingTop: space.md,
   },
   balance: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   starter: {
