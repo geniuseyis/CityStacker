@@ -121,4 +121,9 @@ describe('motor kurallari', () => {
     expect(e.x).toBeLessThan(VIEW_W);
     expect(e.y).toBeLessThan(VIEW_H);
   });
+
+  it('zorluk arttikca tolerans daralir', () => {
+    expect(DIFFICULTY.easy.tol).toBeGreaterThan(DIFFICULTY.normal.tol);
+    expect(DIFFICULTY.normal.tol).toBeGreaterThan(DIFFICULTY.hard.tol);
+  });
 });
