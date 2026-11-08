@@ -51,4 +51,11 @@ describe('kozmetik', () => {
     expect(skinByKey(DEFAULT_SETTINGS.skin).key).toBe(DEFAULT_SETTINGS.skin);
     expect(craneByKey(DEFAULT_SETTINGS.crane).key).toBe(DEFAULT_SETTINGS.crane);
   });
+
+  it('vinc renkleri gecerli hex', () => {
+    for (const c of CRANES.filter((x) => x.color)) {
+      expect(c.color).toMatch(/^#[0-9A-F]{6}$/);
+      expect(c.dark).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
 });
