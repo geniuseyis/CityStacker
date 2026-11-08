@@ -13,4 +13,8 @@ describe('matematik', () => {
   it('dsin tek fonksiyondur', () => {
     expect(dsin(-1.2)).toBeCloseTo(-dsin(1.2), 12);
   });
+
+  it('dcos Math.cos ile uyusur', () => {
+    for (let x = -10; x <= 10; x += 0.211) expect(dcos(x)).toBeCloseTo(Math.cos(x), 8);
+  });
 });
