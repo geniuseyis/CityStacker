@@ -38,4 +38,10 @@ describe('matematik', () => {
       expect(v).toBeLessThan(1);
     }
   });
+
+  it('ayni durum ayni diziyi uretir', () => {
+    const a = { rng: 99 };
+    const b = { rng: 99 };
+    for (let i = 0; i < 50; i++) expect(nextRandom(a)).toBe(nextRandom(b));
+  });
 });
