@@ -44,4 +44,10 @@ describe('matematik', () => {
     const b = { rng: 99 };
     for (let i = 0; i < 50; i++) expect(nextRandom(a)).toBe(nextRandom(b));
   });
+
+  it('rastgele sayi durumu ilerletir', () => {
+    const st = { rng: 1 };
+    nextRandom(st);
+    expect(st.rng).not.toBe(1);
+  });
 });
